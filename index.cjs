@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
@@ -27,7 +28,7 @@ const pool = mysql.createPool({
 app.use(cors(corsOptions));
 
 // Makes Express parse the JSON body of any requests and adds the body to the req object
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '50mb'}));
 
 app.use(async (req, res, next) => {
   try {
@@ -128,21 +129,60 @@ app.post('/authenticate', async function (req, res) {
   }
 });
 
-app.get('/posts/:category', async (req, res) => {
+app.get('/posts/:category/:sort', async (req, res) => {
   const category = req.params.category;
+  const sort = req.params.sort;
 
   try {
     if(category == 0){
-      const [posts] = await req.db.query(`
-        SELECT * FROM posts`
-      );
-      res.json({ posts });
+      if(sort == 1){
+        const [posts] = await req.db.query(`
+          SELECT * FROM posts
+          ORDER BY date_created DESC
+          LIMIT 3`
+        );
+        res.json({ posts });
+      } else if(sort == 2){
+        const [posts] = await req.db.query(`
+          SELECT * FROM posts
+          ORDER BY date_created DESC
+          LIMIT 3`
+        );
+        res.json({ posts });
+      }else if(sort == 3){
+        const [posts] = await req.db.query(`
+          SELECT * FROM posts
+          ORDER BY posts.likes DESC
+          LIMIT 3`
+        );
+        res.json({ posts });
+      }
     } else {
-      const [posts] = await req.db.query(`
-        SELECT * FROM posts
-        WHERE category = ${category}`
-      );
-      res.json({ posts });
+      if(sort == 1){
+        const [posts] = await req.db.query(`
+          SELECT * FROM posts
+          WHERE category = ${category}
+          ORDER BY date_created DESC
+          LIMIT 2`
+        );
+        res.json({ posts });
+      } else if(sort == 2){
+        const [posts] = await req.db.query(`
+          SELECT * FROM posts
+          WHERE category = ${category}
+          ORDER BY date_created DESC
+          LIMIT 2`
+        );
+        res.json({ posts });
+      } else if(sort == 3){
+        const [posts] = await req.db.query(`
+          SELECT * FROM posts
+          WHERE category = ${category}
+          ORDER BY posts.likes DESC
+          LIMIT 2`
+        );
+        res.json({ posts });
+      }
     }  
   } catch (err) {
     console.log(err);
@@ -239,6 +279,28 @@ app.get('/user-posts', async (req, res) => {
   }
 });
 
+app.get('/user-liked-posts', async (req, res) => {
+  const [scheme, token] = req.headers.authorization.split(' ');
+  const user = jwt.verify(token, process.env.JWT_KEY)
+  console.log('user: ', user)
+
+  try {
+    const [posts] = await req.db.query(`
+    SELECT * FROM posts
+    WHERE posts.post_id IN(
+      SELECT post_id FROM likes
+      WHERE likes.user_id = ${user.userId}
+    )
+    ORDER BY posts.date_created DESC`
+  );
+
+    res.json({ posts });
+  } catch (err) {
+    console.log(err);
+    res.json({ err });
+  }
+});
+
 app.post('/add-post', async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
@@ -247,14 +309,16 @@ app.post('/add-post', async function (req, res) {
   try {
 
     const [post] = await req.db.query(`
-      INSERT INTO posts (post_id, post_title, post_description, category, date_created, user_id)
-      VALUES (:post_id, :post_title, :post_description, :category, :date_created, ${user.userId})`, 
+      INSERT INTO posts (post_id, post_title, post_description, content, category, date_created, likes, image, user_id)
+      VALUES (:post_id, :post_title, :post_description, :content, :category, :date_created, 0, :image, ${user.userId})`, 
       {
       post_id: req.body.post_id,
       post_title: req.body.post_title,
       post_description: req.body.post_description,
+      content: req.body.content,
       category: req.body.category,
       date_created: req.body.date_created,
+      image: req.body.image
       }
     );
     res.json({Success: true})
@@ -271,6 +335,14 @@ app.post('/add-like', async function (req, res) {
   console.log('like added: ',req.body);
 
   try {
+    const [likes] = await req.db.query(`
+      UPDATE posts
+      SET likes = likes + 1
+      WHERE posts.post_id = :post_id`,
+      {
+        post_id: req.body.post_id
+      }
+    );
     const [like] = await req.db.query(`
       INSERT INTO likes (post_id, user_id)
       VALUES (:post_id, ${user.userId})`,
@@ -310,6 +382,11 @@ app.delete('/delete-like/:id', async function (req, res) {
   const post_id = req.params.id;
   console.log('deleted like: ', post_id, user.userId);
   try{
+    const [likes] = await req.db.query(`
+      UPDATE posts
+      SET likes = likes - 1
+      WHERE posts.post_id = "${post_id}"`
+    );
     const [task] = await req.db.query(`
       DELETE FROM likes 
       WHERE likes.post_id = "${post_id}" AND likes.user_id = ${user.userId}`,{hello: 'bye'}
