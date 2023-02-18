@@ -309,8 +309,8 @@ app.post('/add-post', async function (req, res) {
   try {
 
     const [post] = await req.db.query(`
-      INSERT INTO posts (post_id, post_title, post_description, content, category, date_created, likes, image, user_id)
-      VALUES (:post_id, :post_title, :post_description, :content, :category, :date_created, 0, :image, ${user.userId})`, 
+      INSERT INTO posts (post_id, post_title, post_description, Author, content, category, date_created, likes, image, user_id, published)
+      VALUES (:post_id, :post_title, :post_description, '${user.name}', :content, :category, :date_created, 0, :image, ${user.userId}, ${1})`, 
       {
       post_id: req.body.post_id,
       post_title: req.body.post_title,
@@ -318,7 +318,36 @@ app.post('/add-post', async function (req, res) {
       content: req.body.content,
       category: req.body.category,
       date_created: req.body.date_created,
-      image: req.body.image
+      image: req.body.image,
+      }
+    );
+    res.json({Success: true})
+
+  } catch (error) {
+    console.log('error', error);
+    res.json({Success: false})
+  };
+});
+
+app.put('/update-post', async function (req, res) {
+  const [scheme, token] = req.headers.authorization.split(' ');
+  const user = jwt.verify(token, process.env.JWT_KEY)
+  console.log('post updated: ',req.body);
+
+  try {
+
+    const [post] = await req.db.query(`
+      UPDATE posts
+      SET post_title = :post_title, post_description = :post_description, content = :content, category = :category, image = :image, date_edited = :date_edited
+      WHERE post_id = :post_id`, 
+      {
+        post_id: req.body.post_id,
+        post_title: req.body.post_title,
+        post_description: req.body.post_description,
+        content: req.body.content,
+        category: req.body.category,
+        image: req.body.image,
+        date_edited: req.body.date_edited,
       }
     );
     res.json({Success: true})
