@@ -260,15 +260,16 @@ app.get('/user', async (req, res) => {
 });
 
 // GET request to http://localhost:8080/tasks
-app.get('/user-posts', async (req, res) => {
+app.get('/user-posts/:published', async (req, res) => {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
+  const published = req.params.published;
   console.log('user: ', user)
 
   try {
     const [posts] = await req.db.query(`
     SELECT * FROM posts
-    WHERE user_id = ${user.userId}
+    WHERE user_id = ${user.userId} AND published = ${published}
     ORDER BY date_created DESC`
   );
 
@@ -307,18 +308,24 @@ app.post('/add-post', async function (req, res) {
   console.log('post added: ',req.body);
 
   try {
+    let published;
+    if(req.body.type === 'publish'){
+      published = 1;
+    } else if( req.body.type === 'save'){
+      published = 0;
+    }
 
     const [post] = await req.db.query(`
       INSERT INTO posts (post_id, post_title, post_description, Author, content, category, date_created, likes, image, user_id, published)
-      VALUES (:post_id, :post_title, :post_description, '${user.name}', :content, :category, :date_created, 0, :image, ${user.userId}, ${1})`, 
+      VALUES (:post_id, :post_title, :post_description, '${user.name}', :content, :category, :date_created, 0, :image, ${user.userId}, ${published})`, 
       {
-      post_id: req.body.post_id,
-      post_title: req.body.post_title,
-      post_description: req.body.post_description,
-      content: req.body.content,
-      category: req.body.category,
-      date_created: req.body.date_created,
-      image: req.body.image,
+        post_id: req.body.post_id,
+        post_title: req.body.post_title,
+        post_description: req.body.post_description,
+        content: req.body.content,
+        category: req.body.category,
+        date_created: req.body.date_created,
+        image: req.body.image,
       }
     );
     res.json({Success: true})
