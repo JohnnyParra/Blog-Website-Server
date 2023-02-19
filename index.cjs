@@ -6,7 +6,8 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 
 // importing routes
-const authenticateRoute = require('./routes/Authenticate.cjs')
+const authenticateRoute = require('./routes/Authenticate.cjs');
+const postsRoute = require('./routes/Posts.cjs');
 const userRoute = require('./routes/User.cjs');
 const postRoute = require('./routes/Post.cjs');
 const likeRoute = require('./routes/Likes.cjs');
@@ -59,71 +60,9 @@ app.use(async (req, res, next) => {
   }
 });
 
+// Routes before a jwt is needed
 app.use("/authenticate", authenticateRoute);
-
-app.get('/posts/:category/:sort', async (req, res) => {
-  const category = req.params.category;
-  const sort = req.params.sort;
-
-  try {
-    if(category == 0){
-      if(sort == 1){
-        const [posts] = await req.db.query(`
-          SELECT * FROM posts
-          WHERE published = 1
-          ORDER BY date_created DESC
-          LIMIT 3`
-        );
-        res.json({ posts });
-      } else if(sort == 2){
-        const [posts] = await req.db.query(`
-          SELECT * FROM posts
-          WHERE published = 1
-          ORDER BY date_created DESC
-          LIMIT 3`
-        );
-        res.json({ posts });
-      }else if(sort == 3){
-        const [posts] = await req.db.query(`
-          SELECT * FROM posts
-          WHERE published = 1
-          ORDER BY posts.likes DESC
-          LIMIT 3`
-        );
-        res.json({ posts });
-      }
-    } else {
-      if(sort == 1){
-        const [posts] = await req.db.query(`
-          SELECT * FROM posts
-          WHERE category = ${category} AND published = 1
-          ORDER BY date_created DESC
-          LIMIT 2`
-        );
-        res.json({ posts });
-      } else if(sort == 2){
-        const [posts] = await req.db.query(`
-          SELECT * FROM posts
-          WHERE category = ${category} AND published = 1
-          ORDER BY date_created DESC
-          LIMIT 2`
-        );
-        res.json({ posts });
-      } else if(sort == 3){
-        const [posts] = await req.db.query(`
-          SELECT * FROM posts
-          WHERE category = ${category} AND published = 1
-          ORDER BY posts.likes DESC
-          LIMIT 2`
-        );
-        res.json({ posts });
-      }
-    }  
-  } catch (err) {
-    console.log(err);
-    res.json({ err });
-  }
-});
+app.use("/posts", postsRoute);
 
 // Jwt verification checks to see if there is an authorization header with a valid jwt in it.
 app.use(async function verifyJwt(req, res, next) {
