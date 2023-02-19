@@ -12,6 +12,9 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT; // default port to listen
 
+const postRoute = require('./routes/Post.cjs')
+const likeRoute = require('./routes/Likes.cjs')
+
 const corsOptions = {
    origin: '*', 
    credentials: true,  // access-control-allow-credentials:true
@@ -164,7 +167,7 @@ app.get('/posts/:category/:sort', async (req, res) => {
       if(sort == 1){
         const [posts] = await req.db.query(`
           SELECT * FROM posts
-          WHERE category = ${category}, published = 1
+          WHERE category = ${category} AND published = 1
           ORDER BY date_created DESC
           LIMIT 2`
         );
@@ -172,7 +175,7 @@ app.get('/posts/:category/:sort', async (req, res) => {
       } else if(sort == 2){
         const [posts] = await req.db.query(`
           SELECT * FROM posts
-          WHERE category = ${category}, published = 1
+          WHERE category = ${category} AND published = 1
           ORDER BY date_created DESC
           LIMIT 2`
         );
@@ -180,7 +183,7 @@ app.get('/posts/:category/:sort', async (req, res) => {
       } else if(sort == 3){
         const [posts] = await req.db.query(`
           SELECT * FROM posts
-          WHERE category = ${category}, published = 1
+          WHERE category = ${category} AND published = 1
           ORDER BY posts.likes DESC
           LIMIT 2`
         );
@@ -229,26 +232,8 @@ app.use(async function verifyJwt(req, res, next) {
   await next();
 });
 
-app.get('/get-likes/:id', async (req, res) => {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const post_id = req.params.id;
-
-  try {
-    const [likes] = await req.db.query(`
-      SELECT COUNT(post_id) AS Likes FROM likes
-      WHERE post_id = "${post_id}"`
-    );
-    const [userLike] = await req.db.query(`
-      SELECT COUNT(user_id) AS userLike FROM likes
-      WHERE post_id = "${post_id}" AND user_id = ${user.userId}`
-    );
-    res.json({ likes, userLike });
-  } catch (err) {
-    console.log(err);
-    res.json({ err });
-  }
-});
+app.use("/post", postRoute)
+app.use("/likes", likeRoute);
 
 app.get('/user', async (req, res) => {
     const [scheme, token] = req.headers.authorization.split(' ');
@@ -302,139 +287,6 @@ app.get('/user-liked-posts', async (req, res) => {
   } catch (err) {
     console.log(err);
     res.json({ err });
-  }
-});
-
-app.post('/add-post', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  console.log('post added: ',req.body);
-
-  try {
-    let published;
-    if(req.body.type === 'publish'){
-      published = 1;
-    } else if( req.body.type === 'save'){
-      published = 0;
-    }
-
-    const [post] = await req.db.query(`
-      INSERT INTO posts (post_id, post_title, post_description, Author, content, category, date_created, likes, image, user_id, published)
-      VALUES (:post_id, :post_title, :post_description, '${user.name}', :content, :category, :date_created, 0, :image, ${user.userId}, ${published})`, 
-      {
-        post_id: req.body.post_id,
-        post_title: req.body.post_title,
-        post_description: req.body.post_description,
-        content: req.body.content,
-        category: req.body.category,
-        date_created: req.body.date_created,
-        image: req.body.image,
-      }
-    );
-    res.json({Success: true})
-
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
-  };
-});
-
-app.put('/update-post', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  console.log('post updated: ',req.body);
-
-  try {
-
-    const [post] = await req.db.query(`
-      UPDATE posts
-      SET post_title = :post_title, post_description = :post_description, content = :content, category = :category, image = :image, date_edited = :date_edited
-      WHERE post_id = :post_id`, 
-      {
-        post_id: req.body.post_id,
-        post_title: req.body.post_title,
-        post_description: req.body.post_description,
-        content: req.body.content,
-        category: req.body.category,
-        image: req.body.image,
-        date_edited: req.body.date_edited,
-      }
-    );
-    res.json({Success: true})
-
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
-  };
-});
-
-app.post('/add-like', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  console.log('like added: ',req.body);
-
-  try {
-    const [likes] = await req.db.query(`
-      UPDATE posts
-      SET likes = likes + 1
-      WHERE posts.post_id = :post_id`,
-      {
-        post_id: req.body.post_id
-      }
-    );
-    const [like] = await req.db.query(`
-      INSERT INTO likes (post_id, user_id)
-      VALUES (:post_id, ${user.userId})`,
-      {
-      post_id: req.body.post_id,
-      }
-    );
-    res.json({Success: true})
-
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
-  };
-});
-
-app.delete('/delete-post/:id', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const task_id = req.params.id;
-  console.log('deleted post: ', post_id, user.userId);
-  try{
-    const [task] = await req.db.query(`
-      DELETE FROM posts 
-      WHERE posts.post_id = '${post_id}' AND post.user_id = ${user.userId}`,{hello: 'hello'}
-    );
-    res.json({Success: true })
-
-  } catch (error){
-    console.log('error', error)
-    res.json({Success: false})
-  }
-});
-
-app.delete('/delete-like/:id', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const post_id = req.params.id;
-  console.log('deleted like: ', post_id, user.userId);
-  try{
-    const [likes] = await req.db.query(`
-      UPDATE posts
-      SET likes = likes - 1
-      WHERE posts.post_id = "${post_id}"`
-    );
-    const [task] = await req.db.query(`
-      DELETE FROM likes 
-      WHERE likes.post_id = "${post_id}" AND likes.user_id = ${user.userId}`,{hello: 'bye'}
-    );
-    res.json({Success: true })
-
-  } catch (error){
-    console.log('error', error)
-    res.json({Success: false})
   }
 });
 
