@@ -1,10 +1,25 @@
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 const express = require("express");
+const multer = require('multer');
 const router = express.Router();
 
-router.post('/', async function (req, res) {
+const storage = multer.diskStorage({
+  destination: './public/uploads',
+  filename: (req, file, cb) => {
+    cb(null, `${new Date()}-${file.originalname}`);
+  }
+})
+
+const upload = multer({
+  storage: storage,
+});
+
+router.post('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
+  const file = req.file;
+  const imageURL = `http://localhost:3000/uploads/${file.filename}`;
+  console.log(file);
   console.log('post added: ',req.body);
 
   try {
@@ -25,7 +40,7 @@ router.post('/', async function (req, res) {
         content: req.body.content,
         category: req.body.category,
         date_created: req.body.date_created,
-        image: req.body.image,
+        image: imageURL,
       }
     );
     res.json({Success: true})

@@ -4,6 +4,7 @@ const mysql = require('mysql2/promise');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
+const path = require("path");
 
 // importing routes
 const authenticateRoute = require('./routes/Authenticate.cjs');
@@ -59,6 +60,9 @@ app.use(async (req, res, next) => {
     throw err;
   }
 });
+
+app.use("/public", express.static("public"));
+
 
 // Routes before a jwt is needed
 app.use("/authenticate", authenticateRoute);
