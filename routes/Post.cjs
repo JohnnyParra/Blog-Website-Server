@@ -18,8 +18,7 @@ router.post('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
-  const imageURL = `http://localhost:3000/uploads/${file.filename}`;
-  console.log(file);
+  const imageURL = `http://localhost:3000/public/uploads/${file?.filename}`;
   console.log('post added: ',req.body);
 
   try {
@@ -40,7 +39,7 @@ router.post('/', upload.single('image'), async function (req, res) {
         content: req.body.content,
         category: req.body.category,
         date_created: req.body.date_created,
-        image: imageURL,
+        image: file === undefined ? '' : imageURL,
       }
     );
     res.json({Success: true})
@@ -51,12 +50,18 @@ router.post('/', upload.single('image'), async function (req, res) {
   };
 });
 
-router.put('/', async function (req, res) {
+router.put('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
+  const file = req.file;
+  const imageURL = `http://localhost:3000/public/uploads/${file?.filename}`;
   console.log('post updated: ',req.body);
 
   try {
+    const [postCheck] = await req.db.query(`
+    SELECT image FROM posts
+    WHERE post_id = :post_id`,
+    {post_id: req.body.post_id})
 
     const [post] = await req.db.query(`
       UPDATE posts
@@ -68,7 +73,7 @@ router.put('/', async function (req, res) {
         post_description: req.body.post_description,
         content: req.body.content,
         category: req.body.category,
-        image: req.body.image,
+        image: file === undefined ? postCheck[0].image : imageURL,
         date_edited: req.body.date_edited,
       }
     );
