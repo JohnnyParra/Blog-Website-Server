@@ -58,6 +58,12 @@ router.put('/', upload.single('image'), async function (req, res) {
   console.log('post updated: ',req.body);
 
   try {
+    let published;
+    if(req.body.type === 'publish'){
+      published = 1;
+    } else if( req.body.type === 'save'){
+      published = 0;
+    }
     const [postCheck] = await req.db.query(`
     SELECT image FROM posts
     WHERE post_id = :post_id`,
@@ -65,7 +71,7 @@ router.put('/', upload.single('image'), async function (req, res) {
 
     const [post] = await req.db.query(`
       UPDATE posts
-      SET post_title = :post_title, post_description = :post_description, content = :content, category = :category, image = :image, date_edited = :date_edited
+      SET post_title = :post_title, post_description = :post_description, content = :content, category = :category, image = :image, date_edited = :date_edited, published = ${published}
       WHERE post_id = :post_id`, 
       {
         post_id: req.body.post_id,
