@@ -17,6 +17,7 @@ const upload = multer({
 router.post('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
+  console.log("user: ", user)
   const file = req.file;
   const imageURL = `http://localhost:3000/public/uploads/${file?.filename}`;
   console.log('post added: ',req.body);

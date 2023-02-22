@@ -7,7 +7,11 @@ router.get('/', async (req, res) => {
   const user = jwt.verify(token, process.env.JWT_KEY)
   console.log('user: ', user)
 try {
-  res.json({ user });
+  const [userInfo] = await req.db.query(`
+  SELECT id, name, email, date_created, color, avatar FROM users
+  WHERE id = ${user.userId}`
+  ); 
+  res.json({ user, userInfo });
 } catch (err) {
   console.log(err);
   res.json({ err });
