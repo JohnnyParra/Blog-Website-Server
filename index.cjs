@@ -12,6 +12,7 @@ const postsRoute = require('./routes/Posts.cjs');
 const userRoute = require('./routes/User.cjs');
 const postRoute = require('./routes/Post.cjs');
 const likeRoute = require('./routes/Likes.cjs');
+const profileRoute = require('./routes/Profile.cjs')
 
 // Allows us to access the .env
 require('dotenv').config();
@@ -108,6 +109,7 @@ app.use(async function verifyJwt(req, res, next) {
 app.use("/user", userRoute);
 app.use("/post", postRoute);
 app.use("/likes", likeRoute);
+app.use("/profile", profileRoute)
 
 // Start the Express server
 app.listen(port, () => {
