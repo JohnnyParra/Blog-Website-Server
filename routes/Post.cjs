@@ -95,12 +95,13 @@ router.put('/', upload.single('image'), async function (req, res) {
 router.delete('/:id', async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
-  const task_id = req.params.id;
+  const post_id = req.params.id;
   console.log('deleted post: ', post_id, user.userId);
   try{
     const [task] = await req.db.query(`
-      DELETE FROM posts 
-      WHERE posts.post_id = '${post_id}' AND post.user_id = ${user.userId}`,{hello: 'hello'}
+      UPDATE posts
+      SET deleted = 1 
+      WHERE posts.post_id = '${post_id}' AND posts.user_id = ${user.userId}`,{hello: 'hello'}
     );
     res.json({Success: true })
 
