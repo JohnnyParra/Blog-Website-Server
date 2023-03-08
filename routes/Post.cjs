@@ -31,8 +31,8 @@ router.post('/', upload.single('image'), async function (req, res) {
     }
 
     const [post] = await req.db.query(`
-      INSERT INTO posts (post_id, post_title, post_description, Author, content, category, date_created, likes, image, user_id, published)
-      VALUES (:post_id, :post_title, :post_description, '${user.name}', :content, :category, :date_created, 0, :image, ${user.userId}, ${published})`, 
+      INSERT INTO posts (post_id, post_title, post_description, Author, content, category, date_created, likes, image, user_id, published, deleted)
+      VALUES (:post_id, :post_title, :post_description, '${user.name}', :content, :category, :date_created, 0, :image, ${user.userId}, ${published}, ${0})`, 
       {
         post_id: req.body.post_id,
         post_title: req.body.post_title,
