@@ -14,6 +14,21 @@ const upload = multer({
   storage: storage,
 });
 
+router.get('/:id', async (req, res) => {
+  const post_id = req.params.id;
+
+  try {
+    const [post] = await req.db.query(`
+      SELECT * FROM posts
+      WHERE post_id = '${post_id}'`
+    );
+    res.json({ post });
+  } catch (err) {
+    console.log(err);
+    res.json({ err });
+  }
+});
+
 router.post('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
