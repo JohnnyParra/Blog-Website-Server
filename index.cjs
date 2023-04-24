@@ -112,6 +112,6 @@ app.use("/likes", likeRoute);
 app.use("/profile", profileRoute)
 
 // Start the Express server
-app.listen(port, () => {
+app.listen(process.env.PORT | port, () => {
   console.log(`server started at http://localhost:${port}`);
 });
