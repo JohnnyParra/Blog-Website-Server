@@ -1,10 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
-const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
-const path = require("path");
 
 // importing routes
 const authenticateRoute = require('./routes/Authenticate.cjs');
@@ -112,6 +110,6 @@ app.use("/likes", likeRoute);
 app.use("/profile", profileRoute)
 
 // Start the Express server
-app.listen(process.env.PORT | port, () => {
+app.listen(port, () => {
   console.log(`server started at http://localhost:${port}`);
 });
