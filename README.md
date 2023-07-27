@@ -11,7 +11,7 @@ The frontend of this application can be found here: [Client Repo](https://github
 npm i
 ```
 
-3. Import the database dump into mysql in the folder ExampleDB in this repo
+3. Import the database dump into mysql using the folder ExampleDB that is in this repo
 
 4. Create a .env file in this repo that stores the following information:  <br>
 DB_HOST      = //The name of the database host (ex. localhost)  
