@@ -10,7 +10,8 @@ const postsRoute = require('./routes/Posts.cjs');
 const userRoute = require('./routes/User.cjs');
 const postRoute = require('./routes/Post.cjs');
 const likeRoute = require('./routes/Likes.cjs');
-const profileRoute = require('./routes/Profile.cjs')
+const profileRoute = require('./routes/Profile.cjs');
+const searchRoute = require('./routes/Search.cjs');
 
 // Allows us to access the .env
 require('dotenv').config();
@@ -66,6 +67,7 @@ app.use("/public", express.static("public"));
 // Routes before a jwt is needed
 app.use("/authenticate", authenticateRoute);
 app.use("/posts", postsRoute);
+app.use("/search", searchRoute);
 
 // Jwt verification checks to see if there is an authorization header with a valid jwt in it.
 app.use(async function verifyJwt(req, res, next) {
