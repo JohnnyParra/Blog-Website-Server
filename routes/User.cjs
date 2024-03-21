@@ -48,13 +48,24 @@ router.get('/posts/:published', async (req, res) => {
   console.log('user: ', user)
   
   try {
-    const [posts] = await req.db.query(`
-    SELECT * FROM posts
-    WHERE user_id = ${user.userId} AND published = ${published}
-    ORDER BY date_created DESC`
-  );
-  
-    res.json({ posts });
+    if (published === 'deleted') {
+      const [posts] = await req.db.query(`
+      SELECT * FROM posts
+      WHERE user_id = ${user.userId} 
+        AND deleted = 1
+      ORDER BY date_created DESC`
+      );
+      res.json({ posts });
+    } else {
+      const [posts] = await req.db.query(`
+      SELECT * FROM posts
+      WHERE user_id = ${user.userId} 
+        AND published = ${published}
+        AND deleted = 0
+      ORDER BY date_created DESC`
+      );
+      res.json({ posts });
+    }
   } catch (err) {
     console.log(err);
     res.json({ err });
