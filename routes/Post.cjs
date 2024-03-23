@@ -20,7 +20,7 @@ router.get('/:id', async (req, res) => {
   try {
     const [post] = await req.db.query(`
       SELECT * FROM posts
-      WHERE post_id = '${post_id}'`
+      WHERE id = '${post_id}'`
     );
     res.json({ post });
   } catch (err) {
@@ -46,15 +46,14 @@ router.post('/', upload.single('image'), async function (req, res) {
     }
 
     const [post] = await req.db.query(`
-      INSERT INTO posts (post_id, post_title, post_description, Author, content, category, date_created, likes, image, user_id, published, deleted)
-      VALUES (:post_id, :post_title, :post_description, '${user.name}', :content, :category, :date_created, 0, :image, ${user.userId}, ${published}, ${0})`, 
+      INSERT INTO posts (id, user_id, title, description, author, content, category, image, is_published, date_published, date_deleted)
+      VALUES (:id, ${user.userId}, :title, :description, '${user.name}', :content, :category, :image, ${published}, IF(${published} = 1, UTC_TIMESTAMP(), NULL), NULL)`, 
       {
-        post_id: req.body.post_id,
-        post_title: req.body.post_title,
-        post_description: req.body.post_description,
+        id: req.body.id,
+        title: req.body.title,
+        description: req.body.description,
         content: req.body.content,
         category: req.body.category,
-        date_created: req.body.date_created,
         image: file === undefined ? '' : imageURL,
       }
     );
@@ -82,21 +81,27 @@ router.put('/', upload.single('image'), async function (req, res) {
     }
     const [postCheck] = await req.db.query(`
     SELECT image FROM posts
-    WHERE post_id = :post_id`,
-    {post_id: req.body.post_id})
+    WHERE id = :id`,
+    {id: req.body.id})
 
     const [post] = await req.db.query(`
       UPDATE posts
-      SET post_title = :post_title, post_description = :post_description, content = :content, category = :category, image = :image, date_edited = :date_edited, published = ${published}
-      WHERE post_id = :post_id`, 
+      SET title = :title, 
+        description = :description, 
+        content = :content, 
+        category = :category, 
+        image = :image, 
+        date_published = IF((${published} = 1 AND date_published is NULL), UTC_TIMESTAMP(), date_published),
+        date_edited = IF((${published} = 1 AND date_published is not NULL), UTC_TIMESTAMP(), date_edited), 
+        is_published = ${published}
+      WHERE id = :id`, 
       {
-        post_id: req.body.post_id,
-        post_title: req.body.post_title,
-        post_description: req.body.post_description,
+        id: req.body.id,
+        title: req.body.title,
+        description: req.body.description,
         content: req.body.content,
         category: req.body.category,
         image: file === undefined ? postCheck[0].image : imageURL,
-        date_edited: req.body.date_edited,
       }
     );
     res.json({Success: true})
@@ -115,8 +120,8 @@ router.delete('/:id', async function (req, res) {
   try{
     const [task] = await req.db.query(`
       UPDATE posts
-      SET deleted = 1 
-      WHERE posts.post_id = '${post_id}' AND posts.user_id = ${user.userId}`,{hello: 'hello'}
+      SET date_deleted = UTC_TIMESTAMP()  
+      WHERE posts.id = '${post_id}' AND posts.user_id = ${user.userId}`,{hello: 'hello'}
     );
     res.json({Success: true })
 

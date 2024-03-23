@@ -45,7 +45,7 @@ app.use(async (req, res, next) => {
 
     // Traditional mode ensures not null is respected for unsupplied fields, ensures valid JavaScript dates, etc.
     await req.db.query('SET SESSION sql_mode = "TRADITIONAL"');
-    await req.db.query(`SET time_zone = '-8:00'`);
+    await req.db.query(`SET time_zone = '+00:00'`);
 
     // Moves the request on down the line to the n ext middleware functions and/or the endpoint it's headed for
     await next();
