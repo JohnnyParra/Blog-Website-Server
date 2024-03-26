@@ -72,4 +72,21 @@ router.get('/posts/:published', async (req, res) => {
   }
   });
 
+  router.delete('/', async (req, res) => {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY)
+    console.log('user: ', user)
+  try {
+    const [userInfo] = await req.db.query(`
+    UPDATE users
+    SET date_deleted = UTC_TIMESTAMP()
+    WHERE id = ${user.userId};`
+    ); 
+    res.json({ Success: true });
+  } catch (err) {
+    console.log(err);
+    res.json({ Success: false, err });
+  }
+  });
+
 module.exports = router;

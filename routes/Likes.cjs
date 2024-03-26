@@ -9,8 +9,9 @@ router.get('/:id', async (req, res) => {
 
   try {
     const [likes] = await req.db.query(`
-      SELECT COUNT(post_id) AS Likes FROM post_likes
-      WHERE post_id = "${post_id}"`
+      SELECT COUNT(post_id) AS Likes FROM post_likes l
+      WHERE l.post_id = "${post_id}"
+      AND l.user_id in (SELECT id FROM users u WHERE l.user_id = u.id AND u.date_deleted is NULL)`
     );
     const [userLike] = await req.db.query(`
       SELECT COUNT(user_id) AS userLike FROM post_likes

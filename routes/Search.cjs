@@ -7,8 +7,10 @@ router.get('/:search', async (req, res) => {
 
   try {
     const [posts] = await req.db.query(`
-      SELECT * From posts
-      WHERE title LIKE "%${search}%" OR description LIKE "%${search}%"`
+      SELECT * From posts p
+      WHERE title LIKE "%${search}%" 
+        OR description LIKE "%${search}%"
+        AND p.user_id in (SELECT id FROM user u WHERE p.user_id = u.id AND date_deleted is NULL)`
     );
     res.json({ posts });
     
