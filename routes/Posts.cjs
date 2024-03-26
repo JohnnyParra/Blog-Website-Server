@@ -54,10 +54,10 @@ router.get('/:category/:sort/:page', async (req, res) => {
         AND p.date_deleted is NULL
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)`
       );
-      if(sort == 1){
+      if(sort == 1){ //Most Recent
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
-          WHERE p.id != '${featuredPost[0].post_id}' 
+          WHERE p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
             AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
@@ -65,10 +65,10 @@ router.get('/:category/:sort/:page', async (req, res) => {
           LIMIT ${page * 2}, 2`
         );
         res.json({ posts, count });
-      } else if(sort == 2){
+      } else if(sort == 2){ //Most Recent
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
-          WHERE p.id != '${featuredPost[0].post_id}' 
+          WHERE p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
             AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
@@ -76,10 +76,10 @@ router.get('/:category/:sort/:page', async (req, res) => {
           LIMIT ${page * 2}, 2`
         );
         res.json({ posts, count });
-      }else if(sort == 3){
+      }else if(sort == 3){ //Most Likes
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
-          WHERE p.id != '${featuredPost[0].post_id}' 
+          WHERE p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
             AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
@@ -105,11 +105,11 @@ router.get('/:category/:sort/:page', async (req, res) => {
         AND p.date_deleted is NULL
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)`
       );
-      if(sort == 1){
+      if(sort == 1){ //Most Recent
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
           WHERE p.category = ${category} 
-            AND p.id != '${featuredPost[0].post_id}' 
+            AND p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
             AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
@@ -117,11 +117,11 @@ router.get('/:category/:sort/:page', async (req, res) => {
           LIMIT ${page * 2}, 2`
         );
         res.json({ posts, count });
-      } else if(sort == 2){
+      } else if(sort == 2){ //Most Recent
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
           WHERE p.category = ${category} 
-            AND p.id != '${featuredPost[0].post_id}' 
+            AND p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
             AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
@@ -129,10 +129,10 @@ router.get('/:category/:sort/:page', async (req, res) => {
           LIMIT ${page * 2}, 2`
         );
         res.json({ posts, count });
-      } else if(sort == 3){
+      } else if(sort == 3){ //Most Likes
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
-          WHERE p.id != '${featuredPost[0].post_id}' 
+          WHERE p.id != '${featuredPost[0].id}' 
             AND p.category = ${category} 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
