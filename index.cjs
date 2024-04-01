@@ -12,6 +12,7 @@ const postRoute = require('./routes/Post.cjs');
 const likeRoute = require('./routes/Likes.cjs');
 const profileRoute = require('./routes/Profile.cjs');
 const searchRoute = require('./routes/Search.cjs');
+const commentsRoute = require('./routes/Comments.cjs')
 
 // Allows us to access the .env
 require('dotenv').config();
@@ -29,7 +30,8 @@ const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    timezone: "+00:00"
 });
 
 app.use(cors(corsOptions));
@@ -110,6 +112,7 @@ app.use("/user", userRoute);
 app.use("/post", postRoute);
 app.use("/likes", likeRoute);
 app.use("/profile", profileRoute)
+app.use("/comments", commentsRoute)
 
 // Start the Express server
 app.listen(port, () => {
