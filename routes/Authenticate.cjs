@@ -15,10 +15,9 @@ router.post('/register', async function (req, res) {
     await bcrypt.hash(req.body.password, 10).then(async hash => {
       try {
         console.log('HASHED PASSWORD', hash);
-        const date_created = new Date().getTime().toString()
         const [user] = await req.db.query(`
           INSERT INTO users (name, email, password, date_created)
-          VALUES (:name, :email, :password, ${date_created});
+          VALUES (:name, :email, :password, UTC_TIMESTAMP());
         `, {
           name: req.body.name,
           email: req.body.email,
@@ -34,7 +33,7 @@ router.post('/register', async function (req, res) {
             userId: user.insertId,
             name: userInfo[0].name,
             email: userInfo[0].email,
-            date_created: date_created
+            date_created: Date.UTC()
           },
           process.env.JWT_KEY
         );
@@ -56,9 +55,9 @@ router.post('/register', async function (req, res) {
 router.post('/login', async function (req, res) {
   try {
     const { email, password } = req.body;
-    const [[user]] = await req.db.query(`SELECT * FROM users WHERE email = :email`, {  email });
+    const [[user]] = await req.db.query(`SELECT * FROM users WHERE email = :email AND date_deleted is NULL`, {  email });
 
-    if (!user) res.json('Email not found');
+    if (!user) return res.json('Email not found');
     const dbPassword = `${user.password}`
     const compare = await bcrypt.compare(password, dbPassword);
 

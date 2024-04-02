@@ -27,11 +27,11 @@ console.log('user: ', user)
 try {
   const [posts] = await req.db.query(`
   SELECT * FROM posts
-  WHERE posts.post_id IN(
-    SELECT post_id FROM likes
-    WHERE likes.user_id = ${user.userId}
+  WHERE posts.id IN(
+    SELECT post_id FROM post_likes
+    WHERE post_likes.user_id = ${user.userId}
   )
-  ORDER BY posts.date_created DESC`
+  ORDER BY posts.date_published DESC`
 );
 
   res.json({ posts });
@@ -48,16 +48,44 @@ router.get('/posts/:published', async (req, res) => {
   console.log('user: ', user)
   
   try {
-    const [posts] = await req.db.query(`
-    SELECT * FROM posts
-    WHERE user_id = ${user.userId} AND published = ${published}
-    ORDER BY date_created DESC`
-  );
-  
-    res.json({ posts });
+    if (published === 'deleted') {
+      const [posts] = await req.db.query(`
+      SELECT * FROM posts
+      WHERE user_id = ${user.userId} 
+        AND date_deleted is not NULL
+      ORDER BY date_published DESC`
+      );
+      res.json({ posts });
+    } else {
+      const [posts] = await req.db.query(`
+      SELECT * FROM posts
+      WHERE user_id = ${user.userId} 
+        AND is_published = ${published}
+        AND date_deleted is NULL
+      ORDER BY date_published DESC`
+      );
+      res.json({ posts });
+    }
   } catch (err) {
     console.log(err);
     res.json({ err });
+  }
+  });
+
+  router.delete('/', async (req, res) => {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY)
+    console.log('user: ', user)
+  try {
+    const [userInfo] = await req.db.query(`
+    UPDATE users
+    SET date_deleted = UTC_TIMESTAMP()
+    WHERE id = ${user.userId};`
+    ); 
+    res.json({ Success: true });
+  } catch (err) {
+    console.log(err);
+    res.json({ Success: false, err });
   }
   });
 

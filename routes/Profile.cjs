@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const express = require("express");
 const multer = require('multer');
+const fs = require('fs');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 
@@ -28,6 +29,21 @@ router.put('/', upload.single('avatar'), async function (req, res) {
     const compare = await bcrypt.compare(req.body.password, dbPassword);
 
     if(compare){
+      const [image] = await req.db.query(`
+        SELECT avatar FROM users
+        WHERE id = ${user.userId}
+      `)
+
+      if (image[0].avatar) {
+        fs.unlink(image[0].avatar.split("/").splice(3, 6).join("/"), err => {
+          if (err) {
+            console.log("delete image error: ", err);
+          } else {
+            console.log("Image deleted")
+          }
+        })
+      }
+
       const [avatar] = await req.db.query(`
       UPDATE users
       SET avatar = :avatar, email = :email, name = :name
