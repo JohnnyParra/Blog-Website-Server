@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `blog_database` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `blog_database`;
--- MySQL dump 10.13  Distrib 8.0.31, for macos12 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.34, for Win64 (x86_64)
 --
 -- Host: localhost    Database: blog_database
 -- ------------------------------------------------------
--- Server version	8.0.31
+-- Server version	8.0.34
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -18,27 +16,30 @@ USE `blog_database`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `likes`
+-- Table structure for table `comment_likes`
 --
 
-DROP TABLE IF EXISTS `likes`;
+DROP TABLE IF EXISTS `comment_likes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `likes` (
-  `post_id` varchar(22) NOT NULL,
-  `user_id` int NOT NULL,
-  PRIMARY KEY (`post_id`,`user_id`)
+CREATE TABLE `comment_likes` (
+  `comment_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  PRIMARY KEY (`comment_id`,`user_id`),
+  KEY `fkcomment_likes_user_id_idx` (`user_id`),
+  CONSTRAINT `fkcomment_likes_comment_id` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fkcomment_likes_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `likes`
+-- Dumping data for table `comment_likes`
 --
 
-LOCK TABLES `likes` WRITE;
-/*!40000 ALTER TABLE `likes` DISABLE KEYS */;
-INSERT INTO `likes` VALUES ('4lnhTH_XIPWPcgUsTpvDR',1),('Ac_a5QW2gsGRdlYqnHzCP',1),('Ac_a5QW2gsGRdlYqnHzCP',2),('E5Ns1y-3NrRUQBSK0Ub5B',14),('hZYR7DVrCCeyUjRQXgtZP',1),('hZYR7DVrCCeyUjRQXgtZP',2),('Jc-qL8QY3SSej2T5pWIZE',1),('ZLWfS1uZRqdoCa_Aytg0H',1);
-/*!40000 ALTER TABLE `likes` ENABLE KEYS */;
+LOCK TABLES `comment_likes` WRITE;
+/*!40000 ALTER TABLE `comment_likes` DISABLE KEYS */;
+INSERT INTO `comment_likes` VALUES (31,1),(32,1),(33,1),(34,1),(35,1),(36,1),(38,1),(38,3),(31,24),(33,24),(38,24),(38,25),(32,26),(33,26);
+/*!40000 ALTER TABLE `comment_likes` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -50,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-07-25 14:03:22
+-- Dump completed on 2024-04-01 22:09:35
