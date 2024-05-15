@@ -21,7 +21,7 @@ const app = express();
 const port = process.env.PORT; // default port to listen
 
 const corsOptions = {
-   origin: '*', 
+   origin: 'https://johnnymparra-blog.netlify.app', 
    credentials: true,  // access-control-allow-credentials:true
    optionSuccessStatus: 200,
 };
@@ -115,6 +115,8 @@ app.use("/profile", profileRoute)
 app.use("/comments", commentsRoute)
 
 // Start the Express server
-app.listen(port, () => {
-  console.log(`server started at http://localhost:${port}`);
+app.listen(port || 3001, () => {
+  console.log(`server started at http://localhost:${port || 3001}`);
 });
+
+export default app;
