@@ -1,19 +1,6 @@
 const jwt = require('jsonwebtoken');
 const express = require("express");
-const multer = require('multer');
-const fs = require('fs');
 const router = express.Router();
-
-const storage = multer.diskStorage({
-  destination: './public/uploads',
-  filename: (req, file, cb) => {
-    cb(null, `${new Date().getTime()}-${file.originalname}`);
-  }
-})
-
-const upload = multer({
-  storage: storage,
-});
 
 router.get('/:id', async (req, res) => {
   const post_id = req.params.id;
@@ -30,7 +17,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', upload.single('image'), async function (req, res) {
+router.post('/', async function (req, res) { //here
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   console.log("user: ", user)
@@ -66,7 +53,7 @@ router.post('/', upload.single('image'), async function (req, res) {
   };
 });
 
-router.put('/', upload.single('image'), async function (req, res) {
+router.put('/', async function (req, res) { //here
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
@@ -80,20 +67,20 @@ router.put('/', upload.single('image'), async function (req, res) {
     } else if( req.body.type === 'save'){
       published = 0;
     }
-    const [postCheck] = await req.db.query(`
-    SELECT image FROM posts
-    WHERE id = :id`,
-    {id: req.body.id})
+    // const [postCheck] = await req.db.query(` // deleting images
+    // SELECT image FROM posts
+    // WHERE id = :id`,
+    // {id: req.body.id})
 
-    if (postCheck[0].image) {
-      fs.unlink(postCheck[0].image.split("/").splice(3, 6).join("/"), err => {
-        if (err) {
-          console.log("delete image error: ", err);
-        } else {
-          console.log("Image deleted")
-        }
-      })
-    }
+    // if (postCheck[0].image) {
+    //   fs.unlink(postCheck[0].image.split("/").splice(3, 6).join("/"), err => {
+    //     if (err) {
+    //       console.log("delete image error: ", err);
+    //     } else {
+    //       console.log("Image deleted")
+    //     }
+    //   })
+    // }
 
     const [post] = await req.db.query(`
       UPDATE posts
