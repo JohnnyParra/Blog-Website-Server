@@ -81,7 +81,7 @@ app.use(async function verifyJwt(req, res, next) {
   const [scheme, token] = req.headers.authorization.split(' ');
 
   if (scheme !== 'Bearer') {
-    res.json('Invalid authorization, invalid authorization scheme');
+    return res.status(401).json({error: 'Invalid authorization, invalid authorization scheme'});
   }
 
   try {
