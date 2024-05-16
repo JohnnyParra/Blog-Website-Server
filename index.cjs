@@ -75,7 +75,7 @@ app.use("/search", searchRoute);
 app.use(async function verifyJwt(req, res, next) {
   // console.log(req.headers.authorization)
   if (!req.headers.authorization) {
-    res.json('Invalid authorization, no authorization headers');
+    return res.status(401).json({error: 'Invalid authorization, no authorization headers'});
   }
 
   const [scheme, token] = req.headers.authorization.split(' ');
