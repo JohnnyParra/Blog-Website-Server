@@ -51,19 +51,20 @@ router.put('/', upload.single('avatar'), async function (req, res) { // here
         const blob = await put(blobName, file.buffer, {
           access: 'public'
         })
-        imageURL = blob.url;
+        imageURL = blob;
       }
 
       const [avatar] = await req.db.query(`
       UPDATE users
-      SET avatar = :avatar, email = :email, name = :name
+      SET avatar = :avatar, avatar_metadata = avatar_metadata, email = :email, name = :name
       WHERE id = ${user.userId}`, 
       {
         name: req.body.name,
         email: req.body.email,
-        avatar: file === undefined ? dbUser.avatar : imageURL
+        avatar: file === undefined ? dbUser.avatar : imageURL.url,
+        avatar_metadata: file === undefined ? dbUser.avatar_metadata : imageURL
       });
-    res.json({Success: true, blob: imageURL})
+    res.json({Success: true })
     } else{
       res.json(false);
     }
