@@ -115,8 +115,6 @@ app.use("/profile", profileRoute)
 app.use("/comments", commentsRoute)
 
 // Start the Express server
-app.listen(port || 3001, () => {
-  console.log(`server started at http://localhost:${port || 3001}`);
+app.listen(port || 3000, () => {
+  console.log(`server started at http://localhost:${port || 3000}`);
 });
-
-export default app;
