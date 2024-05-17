@@ -51,7 +51,7 @@ router.put('/', upload.single('avatar'), async function (req, res) { // here
         const blob = await put(blobName, file.buffer, {
           access: 'public'
         })
-        imageURL = blob;
+        imageURL = blob.url;
       }
 
       const [avatar] = await req.db.query(`
