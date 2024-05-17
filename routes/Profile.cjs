@@ -1,9 +1,11 @@
 const jwt = require('jsonwebtoken');
 const express = require("express");
 const { put } = require("@vercel/blob")
+const multer = require('multer');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const router = express.Router();
+const storage = multer.memoryStorage();
 
 // const storage = multer.diskStorage({
 //   destination: './public/avatars',
@@ -12,15 +14,16 @@ const router = express.Router();
 //   }
 // })
 
-// const upload = multer({
-//   storage: storage,
-// });
+const upload = multer({
+  storage: storage,
+});
 
-router.put('/', async function (req, res) { // here
+router.put('/', upload.single('avatar'), async function (req, res) { // here
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
-  const imageURL = `http://localhost:3000/public/avatars/${file?.filename}`;
+  let imageURL;
+  // const imageURL = `http://localhost:3000/public/avatars/${file?.filename}`;
   console.log('post updated: ',req.body);
 
   try {
@@ -43,13 +46,13 @@ router.put('/', async function (req, res) { // here
       //     }
       //   })
       // }
-
-      console.log(req.file, req.file.image);
-
-      const blob = await put('test', req.file.image, {
-        access: 'public'
-      });
-      console.log(blob);
+      if(file) {
+        const blobName = `${new Date().getTime()}-${file.originalname}`
+        const blob = await put(blobName, file.buffer, {
+          access: 'public'
+        })
+        imageURL = blob;
+      }
 
       const [avatar] = await req.db.query(`
       UPDATE users
@@ -60,7 +63,7 @@ router.put('/', async function (req, res) { // here
         email: req.body.email,
         avatar: file === undefined ? dbUser.avatar : imageURL
       });
-    res.json({Success: true, blob: blob})
+    res.json({Success: true, blob: imageURL})
     } else{
       res.json(false);
     }
