@@ -44,9 +44,12 @@ router.put('/', async function (req, res) { // here
       //   })
       // }
 
+      console.log(req.file, req.file.image);
+
       const blob = await put('test', req.file.image, {
         access: 'public'
       });
+      console.log(blob);
 
       const [avatar] = await req.db.query(`
       UPDATE users
