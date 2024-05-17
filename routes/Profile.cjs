@@ -25,7 +25,7 @@ router.put('/', upload.single('avatar'), async function (req, res) { // here
     if(compare){
 
       if(file) {
-        const [image] = await req.db.query(` deleting image
+        const [image] = await req.db.query(`
         SELECT avatar FROM users
         WHERE id = ${user.userId}
         `)
