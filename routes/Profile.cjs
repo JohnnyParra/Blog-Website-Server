@@ -10,7 +10,7 @@ const upload = multer({
   storage: storage,
 });
 
-router.put('/', upload.single('avatar'), async function (req, res) { // here
+router.put('/', upload.single('avatar'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
