@@ -25,17 +25,18 @@ router.put('/', upload.single('avatar'), async function (req, res) { // here
     if(compare){
 
       if(file) {
-        const [image] = await req.db.query(`
-        SELECT avatar FROM users
-        WHERE id = ${user.userId}
-        `)
-        if (image[0].avatar) {
-          await del(image[0].avatar)
-          if (err) {
-            console.log("delete image error: ", err);
-          } else {
-            console.log("Image deleted")
+        try {
+          const [image] = await req.db.query(`
+          SELECT avatar FROM users
+          WHERE id = ${user.userId}
+          `)
+          if (image[0].avatar) {
+            await del(image[0].avatar)
           }
+        } catch (err) {
+          console.log("delete image error: ", err);
+        } finally {
+          console.log("Image deleted")
         }
 
         const blobName = `${new Date().getTime()}-${file.originalname}`
