@@ -21,7 +21,7 @@ const app = express();
 const port = process.env.PORT; // default port to listen
 
 const corsOptions = {
-   origin: 'https://johnnymparra-blog.netlify.app', 
+   origin: '*', 
    credentials: true,  // access-control-allow-credentials:true
    optionSuccessStatus: 200,
 };
