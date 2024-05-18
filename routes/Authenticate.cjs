@@ -57,6 +57,22 @@ router.post('/login', async function (req, res) {
     const { email, password } = req.body;
     const [[user]] = await req.db.query(`SELECT * FROM users WHERE email = :email AND date_deleted is NULL`, {  email });
 
+    await bcrypt.hash(req.body.password, 10).then(async hash => {
+      try {
+        console.log('HASHED PASSWORD', hash);
+        const [user] = await req.db.query(`
+          UPDATE users 
+          SET password = :password
+          WHERE id = ${user.id}
+        `, {
+          password: hash,
+        });
+      }catch (err) {
+        console.log('err', err);
+        res.json({ err });
+      }
+    })
+
     if (!user) return res.json('Email not found');
     const dbPassword = `${user.password}`
     const compare = await bcrypt.compare(password, dbPassword);
