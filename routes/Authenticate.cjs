@@ -60,13 +60,11 @@ router.post('/login', async function (req, res) {
     await bcrypt.hash(req.body.password, 10).then(async hash => {
       try {
         console.log('HASHED PASSWORD', hash);
-        const [user] = await req.db.query(`
+        const [user2] = await req.db.query(`
           UPDATE users 
-          SET password = :password
+          SET password = ${hash}
           WHERE id = ${user.id}
-        `, {
-          password: hash,
-        });
+        `);
       }catch (err) {
         console.log('err', err);
         res.json({ err });
