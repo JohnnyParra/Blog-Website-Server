@@ -40,7 +40,7 @@ router.post('/', upload.single('image'), async function (req, res) {
       published = 0;
     }
 
-    const blobName = `${file.originalname}-${new Date().getTime()}`
+    const blobName = `${new Date().getTime()}-${file.originalname}`
     const blob = await put(blobName, file.buffer, {
       access: 'public'
     })
