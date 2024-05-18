@@ -122,7 +122,7 @@ router.put('/', upload.single('image'), async function (req, res) {
         content: req.body.content,
         category: req.body.category,
         image: file === undefined ? postCheck[0].image : imageURL.url,
-        image_metadata: file === undefined ? NULL : stringify(imageURL)
+        image_metadata: file === undefined ? NULL : JSON.stringify(imageURL)
       }
     );
     res.json({Success: true})
