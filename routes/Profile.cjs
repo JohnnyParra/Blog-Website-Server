@@ -54,7 +54,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
         name: req.body.name,
         email: req.body.email,
         avatar: file === undefined ? dbUser.avatar : imageURL.url,
-        avatar_metadata: file === undefined ? dbUser.avatar_metadata : imageURL
+        avatar_metadata: file === undefined ? dbUser.avatar_metadata : JSON.stringify(imageURL)
       });
     res.json({Success: true })
     } else{
