@@ -54,25 +54,8 @@ router.post('/register', async function (req, res) {
 // authenticates user when they log in
 router.post('/login', async function (req, res) {
   try {
-    const { email, password } = req.body;
-    await bcrypt.hash(req.body.password, 10).then(async hash => {
-      const [[user]] = await req.db.query(`SELECT * FROM users WHERE email = :email AND date_deleted is NULL`, {  email });
-
-      try {
-        console.log('HASHED PASSWORD', hash);
-        const [user2] = await req.db.query(`
-          UPDATE users 
-          SET password = '${hash}'
-          WHERE id = ${user.id}
-        `);
-      }catch (err) {
-        console.log('err', err);
-        res.json({ err });
-      }
-    })
-
+    const { email, password } = req.body;    
     const [[user]] = await req.db.query(`SELECT * FROM users WHERE email = :email AND date_deleted is NULL`, {  email });
-
 
     if (!user) return res.json('Email not found');
     const dbPassword = `${user.password}`
