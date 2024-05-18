@@ -67,7 +67,7 @@ router.post('/', upload.single('image'), async function (req, res) {
   };
 });
 
-router.put('/', async function (req, res) { //here
+router.put('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
