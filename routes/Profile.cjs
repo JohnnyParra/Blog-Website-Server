@@ -39,7 +39,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
           console.log("Image deleted")
         }
 
-        const blobName = `${new Date().getTime()}-${file.originalname}`
+        const blobName = `${file.originalname}-${new Date().getTime()}`
         const blob = await put(blobName, file.buffer, {
           access: 'public'
         })
