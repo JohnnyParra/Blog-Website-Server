@@ -31,7 +31,7 @@ PORT         = //The port you want the express backend to run on (ex. 3000)
    npm run devStart (which is for nodemon)
    ```
 
-6. Start the frontend server with the following command in the clinet directory:
+6. Start the frontend server with the following command in the client directory:
    ```
    npm run dev
    ```
