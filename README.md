@@ -1,5 +1,7 @@
 # Blog Application (Server / Backend)
 
+Website using Netlify for the front-end, Vercel for the backend, and Azure MySQL database: [Blog Website](https://johnnymparra-blog.netlify.app/)
+
 The frontend of this application can be found here: [Client Repo](https://github.com/JohnnyParra/BVTCA-Final-Project-Client)
 
 ## Getting Started
@@ -24,7 +26,9 @@ PORT         = //The port you want the express backend to run on (ex. 3000)
 
 5. Start the backend server with the following command in the server directory:
    ```
-   npm start
+   npm run start
+   or
+   npm run devStart (which is for nodemon)
    ```
 
 6. Start the frontend server with the following command in the clinet directory:
