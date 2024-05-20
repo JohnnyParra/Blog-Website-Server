@@ -4,7 +4,7 @@ Website using Netlify for the front-end, Vercel for the backend, and Azure MySQL
 
 The frontend of this application can be found here: [Client Repo](https://github.com/JohnnyParra/BVTCA-Final-Project-Client)
 
-## Getting Started
+## Getting Started (Locally)
 1. Clone both the Client and Server repositories into a single folder
 
 2. Install all the dependecies for both repos with the following commmand: <br>
