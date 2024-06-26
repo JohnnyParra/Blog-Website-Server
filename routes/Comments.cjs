@@ -107,7 +107,7 @@ router.get("/:id/:page", async (req, res) => {
       SELECT COUNT(*) as total FROM comments
       WHERE post_id = '${post_id}' AND date_deleted is NULL
     `);
-    const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
+    const hasMore = (page + 1) * itemsPerPage < total[0]['total'];
 
     res.json({ comments, total, hasMore, nextPage });
   } catch (err) {
