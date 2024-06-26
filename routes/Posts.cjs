@@ -51,12 +51,12 @@ router.get('/:category/:sort/:page', async (req, res) => {
         LIMIT 1`
       );
       const [count] = await req.db.query(`
-      SELECT COUNT(*) FROM posts p
+      SELECT COUNT(*) as count FROM posts p
       WHERE p.is_published = 1 
         AND p.date_deleted is NULL
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)`
       );
-      const hasMore = (page + 1) * 10 < count[0]['COUNT(*)'];
+      const hasMore = (page + 1) * 10 < count[0]['count'];
       if(sort == 1){ //Most Recent
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
@@ -102,13 +102,13 @@ router.get('/:category/:sort/:page', async (req, res) => {
         LIMIT 1`
       );
       const [count] = await req.db.query(`
-      SELECT COUNT(*) FROM posts p
+      SELECT COUNT(*) as count FROM posts p
       WHERE p.category = ${category} 
         AND p.is_published = 1 
         AND p.date_deleted is NULL
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)`
       );
-      const hasMore = (page + 1) * 10 < count[0]['COUNT(*)'];
+      const hasMore = (page + 1) * 10 < count[0]['count'];
       if(sort == 1){ //Most Recent
         const [posts] = await req.db.query(`
           SELECT * FROM posts p
@@ -130,7 +130,7 @@ router.get('/:category/:sort/:page', async (req, res) => {
             AND p.date_deleted is NULL
             AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
           ORDER BY p.date_published DESC
-          LIMIT ${page * 2}, 2`
+          LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
         );
         res.json({ posts, count, hasMore, nextPage });
       } else if(sort == 3){ //Most Likes
