@@ -94,7 +94,7 @@ router.get("/:id/:page", async (req, res) => {
       SELECT x.*, COUNT(y.id) as child_count, u.avatar, u.name FROM comments y
       RIGHT JOIN comments x on y.parent_id = x.id
       JOIN users u ON u.id = x.user_id
-      WHERE x.post_id = '${post_id}' AND x.date_deleted is NULL
+      WHERE x.post_id = '${post_id}' AND y.date_deleted is NULL
       GROUP BY x.id
       HAVING x.parent_id is NULL
       ORDER BY x.date_created ASC
