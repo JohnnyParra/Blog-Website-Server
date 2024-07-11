@@ -102,6 +102,7 @@ router.put('/', upload.single('image'), async function (req, res) {
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
   const postId = req.body.id;
+  const timeStamp = new Date().getTime();
   const imagePath = `ProjectB/posts/${postId}`;
 
   try {
