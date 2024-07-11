@@ -37,6 +37,7 @@ router.post('/', upload.single('image'), async function (req, res) {
   const postId = req.body.id;
   const timeStamp = new Date().getTime();
   const imagePath = `ProjectB/posts/${postId}/`;
+  let imageUrl;
 
   try {
     let published = req.body.type === 'publish' ? 1 : 0;
@@ -74,6 +75,8 @@ router.post('/', upload.single('image'), async function (req, res) {
         pathname: originalBlob.pathname,
         originalSizeKB: originalBlobSize.toFixed(2),
       }
+
+      imageUrl = originalBlob.url;
     }
 
     const [post] = await req.db.query(`
@@ -85,7 +88,7 @@ router.post('/', upload.single('image'), async function (req, res) {
         description: req.body.description,
         content: req.body.content,
         category: req.body.category,
-        image: file === undefined ? NULL : originalBlob.url,
+        image: file === undefined ? NULL : imageUrl,
         image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData)
       }
     );
@@ -104,6 +107,7 @@ router.put('/', upload.single('image'), async function (req, res) {
   const postId = req.body.id;
   const timeStamp = new Date().getTime();
   const imagePath = `ProjectB/posts/${postId}/`;
+  let imageUrl;
 
   try {
     let published = req.body.type === 'publish' ? 1 : 0;
@@ -155,6 +159,7 @@ router.put('/', upload.single('image'), async function (req, res) {
         pathname: originalBlob.pathname,
         originalSizeKB: originalBlobSize.toFixed(2),
       }
+      imageUrl = originalBlob.url;
     }
 
     const [post] = await req.db.query(`
@@ -176,7 +181,7 @@ router.put('/', upload.single('image'), async function (req, res) {
         description: req.body.description,
         content: req.body.content,
         category: req.body.category,
-        image: file === undefined ? postCheck[0].image : originalBlob.url,
+        image: file === undefined ? postCheck[0].image : imageUrl,
         image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData)
       }
     );

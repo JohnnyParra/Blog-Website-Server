@@ -23,6 +23,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
   const userId = user.userId;
   const timeStamp = new Date().getTime();
   const imagePath = `ProjectB/avatars/${userId}/`;
+  let imageUrl;
 
   try {
     const [[dbUser]] = await req.db.query(`SELECT * FROM users WHERE id = :id`, { id: user.userId });
@@ -69,6 +70,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
           pathname: originalBlob.pathname,
           originalSizeKB: originalBlobSize.toFixed(2),
         }
+        imageUrl = originalBlob.url;
       }
 
       const [avatar] = await req.db.query(`
@@ -78,7 +80,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
       {
         name: req.body.name,
         email: req.body.email,
-        avatar: file === undefined ? dbUser.avatar : imageURL.url,
+        avatar: file === undefined ? dbUser.avatar : imageUrl,
         avatar_metadata: file === undefined ? dbUser.avatar_metadata : JSON.stringify(imageMetaData)
       });
     res.json({Success: true })
