@@ -4,10 +4,16 @@ const { put, del } = require("@vercel/blob")
 const multer = require('multer');
 const router = express.Router();
 const storage = multer.memoryStorage();
+const sharp = require('sharp');
 
 const upload = multer({
   storage: storage,
 });
+
+function appendToFilename(filename, string) {
+  let dotIndex = filename.lastIndexOf(".");
+  return filename.substring(0, dotIndex) + string + filename.substring(dotIndex);
+}
 
 router.get('/:id', async (req, res) => {
   const post_id = req.params.id;
@@ -27,24 +33,48 @@ router.get('/:id', async (req, res) => {
 router.post('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
-  console.log("user: ", user)
   const file = req.file;
-  let imageURL;
-  console.log('post added: ',req.body);
+  const postId = req.body.id;
+  const timeStamp = new Date().getTime();
+  const imagePath = `ProjectB/posts/${postId}`;
 
   try {
-    let published;
-    if(req.body.type === 'publish'){
-      published = 1;
-    } else if( req.body.type === 'save'){
-      published = 0;
-    }
+    let published = req.body.type === 'publish' ? 1 : 0;
+    let imageMetaData = {};
 
-    const blobName = `${new Date().getTime()}-${file.originalname}`
-    const blob = await put(blobName, file.buffer, {
-      access: 'public'
-    })
-    imageURL = blob;
+    if (file) {
+      const originalImage = file.buffer;
+      const postImage = await sharp(originalImage)
+        .resize(260, 260, {
+          fit: 'cover',
+          position: 'left top'
+        }).toBuffer();
+      const featuredImage = await sharp(originalImage)
+        .resize(1200, 1200, {
+          fit: 'cover',
+          position: 'left top'
+        }).toBuffer();
+
+      const originalBlobName = `${imagePath}${timeStamp}-${file.originalname}`;
+      const postBlobName = appendToFilename(`${imagePath}${timeStamp}-${file.originalname}`, '-post-card');
+      const featuredBlobName = appendToFilename(`${imagePath}${timeStamp}-${file.originalname}`, '-featured');
+
+      const [originalBlob, postBlob, featuredBlob] = await Promise.all([
+        put(originalBlobName, originalImage, {access: 'public'}),
+        put(postBlobName, postImage, {access: 'public'}),
+        put(featuredBlobName, featuredImage, {access: 'public'}),
+      ])
+
+      const originalBlobSize = Buffer.byteLength(originalImage) / 1024;
+      imageMetaData = {
+        original: originalBlob.url,
+        postCard: postBlob.url,
+        featured: featuredBlob.url,
+        contentType: originalBlob.contentType,
+        pathname: originalBlob.pathname,
+        originalSizeKB: originalBlobSize.toFixed(2),
+      }
+    }
 
     const [post] = await req.db.query(`
       INSERT INTO posts (id, user_id, title, description, author, content, category, image, image_metadata, is_published, date_published, date_deleted)
@@ -55,8 +85,8 @@ router.post('/', upload.single('image'), async function (req, res) {
         description: req.body.description,
         content: req.body.content,
         category: req.body.category,
-        image: file === undefined ? NULL : imageURL.url,
-        image_metadata: file === undefined ? NULL : imageURL
+        image: file === undefined ? NULL : originalBlob.url,
+        image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData)
       }
     );
     res.json({Success: true})
@@ -71,16 +101,11 @@ router.put('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
-  let imageURL;
-  console.log('post updated: ',req.body);
+  const postId = req.body.id;
+  const imagePath = `ProjectB/posts/${postId}`;
 
   try {
-    let published;
-    if(req.body.type === 'publish'){
-      published = 1;
-    } else if( req.body.type === 'save'){
-      published = 0;
-    }
+    let published = req.body.type === 'publish' ? 1 : 0;
 
     try {
       const [postCheck] = await req.db.query(`
@@ -88,7 +113,7 @@ router.put('/', upload.single('image'), async function (req, res) {
       WHERE id = :id`,
       {id: req.body.id})
       if (postCheck[0].image) {
-        await del(postCheck[0].image)
+        await del(imagePath)
       }
       
     } catch (err) {
@@ -97,11 +122,39 @@ router.put('/', upload.single('image'), async function (req, res) {
       console.log("Image deleted")
     }
 
-    const blobName = `${new Date().getTime()}-${file.originalname}`
-    const blob = await put(blobName, file.buffer, {
-      access: 'public'
-    })
-    imageURL = blob;
+    if (file) {
+      const originalImage = file.buffer;
+      const postImage = await sharp(originalImage)
+        .resize(260, 260, {
+          fit: 'cover',
+          position: 'left top'
+        }).toBuffer();
+      const featuredImage = await sharp(originalImage)
+        .resize(1200, 1200, {
+          fit: 'cover',
+          position: 'left top'
+        }).toBuffer();
+
+      const originalBlobName = `${imagePath}${timeStamp}-${file.originalname}`;
+      const postBlobName = appendToFilename(`${imagePath}${timeStamp}-${file.originalname}`, '-post-card');
+      const featuredBlobName = appendToFilename(`${imagePath}${timeStamp}-${file.originalname}`, '-featured');
+
+      const [originalBlob, postBlob, featuredBlob] = await Promise.all([
+        put(originalBlobName, originalImage, {access: 'public'}),
+        put(postBlobName, postImage, {access: 'public'}),
+        put(featuredBlobName, featuredImage, {access: 'public'}),
+      ])
+
+      const originalBlobSize = Buffer.byteLength(originalImage) / 1024;
+      imageMetaData = {
+        original: originalBlob.url,
+        postCard: postBlob.url,
+        featured: featuredBlob.url,
+        contentType: originalBlob.contentType,
+        pathname: originalBlob.pathname,
+        originalSizeKB: originalBlobSize.toFixed(2),
+      }
+    }
 
     const [post] = await req.db.query(`
       UPDATE posts
@@ -114,15 +167,16 @@ router.put('/', upload.single('image'), async function (req, res) {
         date_published = IF((${published} = 1 AND date_published is NULL), UTC_TIMESTAMP(), date_published),
         date_edited = IF((${published} = 1 AND date_published is not NULL), UTC_TIMESTAMP(), date_edited), 
         is_published = ${published}
-      WHERE id = :id`, 
+      WHERE id = :id
+        AND user_id = ${user.userId}`, 
       {
         id: req.body.id,
         title: req.body.title,
         description: req.body.description,
         content: req.body.content,
         category: req.body.category,
-        image: file === undefined ? postCheck[0].image : imageURL.url,
-        image_metadata: file === undefined ? NULL : JSON.stringify(imageURL)
+        image: file === undefined ? postCheck[0].image : originalBlob.url,
+        image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData)
       }
     );
     res.json({Success: true})
@@ -137,7 +191,7 @@ router.delete('/:id', async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const post_id = req.params.id;
-  console.log('deleted post: ', post_id, user.userId);
+
   try{
     const [task] = await req.db.query(`
       UPDATE posts

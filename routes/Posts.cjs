@@ -7,21 +7,21 @@ router.get('/featured/:category', async (req, res) => {
   try {
     if (category == 0) {
       const [post] = await req.db.query(`
-        SELECT * FROM posts p
+        SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
         WHERE p.is_published = 1 
           AND p.date_deleted is NULL
-          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
         ORDER BY (SELECT COUNT(post_id) FROM post_likes l WHERE l.post_id = p.id) DESC
         LIMIT 1`
       );
       res.json({ post });
     } else {
       const [post] = await req.db.query(`
-        SELECT * FROM posts p
+        SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
         WHERE p.category = ${category} 
           AND p.is_published = 1 
           AND p.date_deleted is NULL
-          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
         ORDER BY (SELECT COUNT(post_id) FROM post_likes l WHERE l.post_id = p.id) DESC
         LIMIT 1`
       );
@@ -46,7 +46,7 @@ router.get('/:category/:sort/:page', async (req, res) => {
         SELECT id FROM posts p
         WHERE p.is_published = 1 
           AND p.date_deleted is NULL
-          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
         ORDER BY (SELECT COUNT(post_id) FROM post_likes l WHERE l.post_id = p.id) DESC
         LIMIT 1`
       );
@@ -54,38 +54,38 @@ router.get('/:category/:sort/:page', async (req, res) => {
       SELECT COUNT(*) as count FROM posts p
       WHERE p.is_published = 1 
         AND p.date_deleted is NULL
-        AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)`
+        AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)`
       );
       const hasMore = (page + 1) * 10 < count[0]['count'];
       if(sort == 1){ //Most Recent
         const [posts] = await req.db.query(`
-          SELECT * FROM posts p
+          SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
           WHERE p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
-            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
           ORDER BY p.date_published DESC
           LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
         );
         res.json({ posts, count, hasMore, nextPage });
       } else if(sort == 2){ //Most Recent
         const [posts] = await req.db.query(`
-          SELECT * FROM posts p
+          SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
           WHERE p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
-            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
           ORDER BY p.date_published DESC
           LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
         );
         res.json({ posts, count, hasMore, nextPage });
       }else if(sort == 3){ //Most Likes
         const [posts] = await req.db.query(`
-          SELECT * FROM posts p
+          SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
           WHERE p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
-            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
           ORDER BY (SELECT COUNT(post_id) FROM post_likes l WHERE l.post_id = p.id) DESC
           LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
         );
@@ -97,7 +97,7 @@ router.get('/:category/:sort/:page', async (req, res) => {
         WHERE p.category = ${category} 
           AND p.is_published = 1 
           AND p.date_deleted is NULL
-          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+          AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
         ORDER BY (SELECT COUNT(post_id) FROM post_likes l WHERE l.post_id = p.id) DESC
         LIMIT 1`
       );
@@ -106,41 +106,41 @@ router.get('/:category/:sort/:page', async (req, res) => {
       WHERE p.category = ${category} 
         AND p.is_published = 1 
         AND p.date_deleted is NULL
-        AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)`
+        AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)`
       );
       const hasMore = (page + 1) * 10 < count[0]['count'];
       if(sort == 1){ //Most Recent
         const [posts] = await req.db.query(`
-          SELECT * FROM posts p
+          SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
           WHERE p.category = ${category} 
             AND p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
-            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
           ORDER BY p.date_published DESC
           LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
         );
         res.json({ posts, count, hasMore, nextPage });
       } else if(sort == 2){ //Most Recent
         const [posts] = await req.db.query(`
-          SELECT * FROM posts p
+          SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
           WHERE p.category = ${category} 
             AND p.id != '${featuredPost[0].id}' 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
-            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
           ORDER BY p.date_published DESC
           LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
         );
         res.json({ posts, count, hasMore, nextPage });
       } else if(sort == 3){ //Most Likes
         const [posts] = await req.db.query(`
-          SELECT * FROM posts p
+          SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts p
           WHERE p.id != '${featuredPost[0].id}' 
             AND p.category = ${category} 
             AND p.is_published = 1 
             AND p.date_deleted is NULL
-            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
+            AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
           ORDER BY (SELECT COUNT(post_id) FROM post_likes l WHERE l.post_id = p.id) DESC
           LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
         );

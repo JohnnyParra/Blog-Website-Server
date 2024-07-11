@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
@@ -35,6 +36,15 @@ const pool = mysql.createPool({
 });
 
 app.use(cors(corsOptions));
+
+app.use(compression({filter: shouldCompress}));
+
+function shouldCompress (req, res) {
+  if (req.headers['x-no-compression']) {
+    return false;
+  }
+  return compression.filter(req, res);
+}
 
 // Makes Express parse the JSON body of any requests and adds the body to the req object
 app.use(bodyParser.json({limit: '50mb'}));
@@ -104,7 +114,7 @@ app.use(async function verifyJwt(req, res, next) {
     }
   }
 
-  await next();
+  next();
 });
 
 // Routes

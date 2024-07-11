@@ -71,7 +71,7 @@ router.get('/posts/:published/:page', async (req, res) => {
       const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
       const [posts] = await req.db.query(`
-        SELECT * FROM posts
+        SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts
         WHERE user_id = ${user.userId} 
           AND date_deleted is not NULL
         ORDER BY date_published DESC
@@ -88,7 +88,7 @@ router.get('/posts/:published/:page', async (req, res) => {
       const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
       const [posts] = await req.db.query(`
-        SELECT * FROM posts
+        SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts
         WHERE user_id = ${user.userId} 
           AND is_published = ${published}
           AND date_deleted is NULL
@@ -106,7 +106,6 @@ router.get('/posts/:published/:page', async (req, res) => {
   router.delete('/', async (req, res) => {
     const [scheme, token] = req.headers.authorization.split(' ');
     const user = jwt.verify(token, process.env.JWT_KEY)
-    console.log('user: ', user)
     try {
       const [userInfo] = await req.db.query(`
       UPDATE users
