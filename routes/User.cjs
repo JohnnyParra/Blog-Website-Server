@@ -2,15 +2,20 @@ const jwt = require('jsonwebtoken')
 const express = require("express");
 const router = express.Router();
 
+function appendToFilename(filename, string) {
+  let dotIndex = filename.lastIndexOf(".");
+  return filename.substring(0, dotIndex) + string + filename.substring(dotIndex);
+}
+
 router.get('/', async (req, res) => {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
-  console.log('user: ', user)
 try {
   const [userInfo] = await req.db.query(`
   SELECT id, name, email, date_created, color, avatar FROM users
   WHERE id = ${user.userId}`
   ); 
+  userInfo[0].avatar = appendToFilename(userInfo[0].avatar, '-small');
   res.json({ user, userInfo });
 } catch (err) {
   console.log(err);
@@ -70,13 +75,14 @@ router.get('/posts/:published/:page', async (req, res) => {
       );
       const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
-      const [posts] = await req.db.query(`
+      let [posts] = await req.db.query(`
         SELECT * FROM posts
         WHERE user_id = ${user.userId} 
           AND date_deleted is not NULL
         ORDER BY date_published DESC
         LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
       );
+      posts = posts.map(post => ({...post, image: appendToFilename(post.image, '-post-card')}))
       res.json({ posts, count, hasMore, nextPage });
     } else {
       const [count] = await req.db.query(`
@@ -87,7 +93,7 @@ router.get('/posts/:published/:page', async (req, res) => {
       );
       const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
-      const [posts] = await req.db.query(`
+      let [posts] = await req.db.query(`
         SELECT * FROM posts
         WHERE user_id = ${user.userId} 
           AND is_published = ${published}
@@ -95,6 +101,7 @@ router.get('/posts/:published/:page', async (req, res) => {
         ORDER BY date_published DESC
         LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
       );
+      posts = posts.map(post => ({...post, image: appendToFilename(post.image, '-post-card')}))
       res.json({ posts, count, hasMore, nextPage });
     }
   } catch (err) {

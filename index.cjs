@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
@@ -35,6 +36,14 @@ const pool = mysql.createPool({
 });
 
 app.use(cors(corsOptions));
+app.use(compression({filter: shouldCompress}));
+
+function shouldCompress (req, res) {
+  if (req.headers['x-no-compression']) {
+    return false;
+  }
+  return compression.filter(req, res);
+}
 
 // Makes Express parse the JSON body of any requests and adds the body to the req object
 app.use(bodyParser.json({limit: '50mb'}));
@@ -50,7 +59,7 @@ app.use(async (req, res, next) => {
     await req.db.query(`SET time_zone = '+00:00'`);
 
     // Moves the request on down the line to the n ext middleware functions and/or the endpoint it's headed for
-    await next();
+    next();
 
     // After the endpoint has been reached and resolved, disconnects from the database
     req.db.release();
@@ -75,13 +84,12 @@ app.use("/search", searchRoute);
 app.use(async function verifyJwt(req, res, next) {
   // console.log(req.headers.authorization)
   if (!req.headers.authorization) {
-    res.json('Invalid authorization, no authorization headers');
+    return res.json('Invalid authorization, no authorization headers');
   }
-
   const [scheme, token] = req.headers.authorization.split(' ');
 
   if (scheme !== 'Bearer') {
-    res.json('Invalid authorization, invalid authorization scheme');
+    return res.json('Invalid authorization, invalid authorization scheme');
   }
 
   try {
@@ -104,7 +112,7 @@ app.use(async function verifyJwt(req, res, next) {
     }
   }
 
-  await next();
+  next();
 });
 
 // Routes

@@ -2,18 +2,40 @@ const jwt = require('jsonwebtoken');
 const express = require("express");
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
 const router = express.Router();
+const sharp = require('sharp');
+
+
+function ensureDirectoryExistence(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
 
 const storage = multer.diskStorage({
-  destination: './public/uploads',
+  destination: (req, file, cb) => {
+    ensureDirectoryExistence('./public/uploads/temp');
+    cb(null, './public/uploads/temp');
+  },
   filename: (req, file, cb) => {
     cb(null, `${new Date().getTime()}-${file.originalname}`);
   }
 })
 
+
 const upload = multer({
   storage: storage,
 });
+
+
+function appendToFilename(filename, string) {
+  let dotIndex = filename.lastIndexOf(".");
+  return filename.substring(0, dotIndex) + string + filename.substring(dotIndex);
+}
+
+
 
 router.get('/:id', async (req, res) => {
   const post_id = req.params.id;
@@ -30,13 +52,15 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+
+
+
 router.post('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  console.log("user: ", user)
+  const user = jwt.verify(token, process.env.JWT_KEY);
   const file = req.file;
-  const imageURL = `http://localhost:3000/public/uploads/${file?.filename}`;
-  console.log('post added: ',req.body);
+  const imageURL = `http://localhost:3000/`;
+  const tempPath = `./public/uploads/temp/${file?.filename}`;
 
   try {
     let published;
@@ -44,6 +68,34 @@ router.post('/', upload.single('image'), async function (req, res) {
       published = 1;
     } else if( req.body.type === 'save'){
       published = 0;
+    }
+
+    if (file) {
+      const postId = req.body.id;
+      const postDir = `./public/uploads/${postId}`;
+      ensureDirectoryExistence(postDir);
+
+      const originalPath = path.join(postDir, file.filename);
+      imageURL += originalPath.replace(/^\/|\\/g, '/');
+      fs.renameSync(tempPath, originalPath);
+
+      const postCardFilename = appendToFilename(file.filename, '-post-card');
+      const postCardPath = path.join(postDir, postCardFilename);
+      await sharp(originalPath)
+        .resize(260, 260, {
+          fit: 'cover',
+          position: 'left top'
+        })
+        .toFile(postCardPath);
+      
+      const featuredFilename = appendToFilename(file.filename, '-featured');
+      const featuredPath = path.join(postDir, featuredFilename)
+      await sharp(originalPath)
+        .resize(1200, 1200, {
+          fit: 'cover',
+          position: 'left top'
+        })
+        .toFile(featuredPath);
     }
 
     const [post] = await req.db.query(`
@@ -66,12 +118,15 @@ router.post('/', upload.single('image'), async function (req, res) {
   };
 });
 
-router.put('/', upload.single('image'), async function (req, res) {
+
+
+
+router.put('/', upload.single('image'), async function (req, res) { //300x225 1200x350
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const file = req.file;
-  const imageURL = `http://localhost:3000/public/uploads/${file?.filename}`;
-  console.log('post updated: ',req.body);
+  let imageURL = 'http://localhost:3000/';
+  const tempPath = `./public/uploads/temp/${file?.filename}`;
 
   try {
     let published;
@@ -86,13 +141,41 @@ router.put('/', upload.single('image'), async function (req, res) {
     {id: req.body.id})
 
     if (postCheck[0].image) {
-      fs.unlink(postCheck[0].image.split("/").splice(3, 6).join("/"), err => {
+      fs.rmSync(`./public/uploads/${req.body.id}`, {recursive: true, force: true}, err => {
         if (err) {
           console.log("delete image error: ", err);
         } else {
           console.log("Image deleted")
         }
       })
+    }
+
+    if (file) {
+      const postId = req.body.id;
+      const postDir = `./public/uploads/${postId}`;
+      ensureDirectoryExistence(postDir);
+
+      const originalPath = path.join(postDir, file.filename);
+      imageURL += originalPath.replace(/^\/|\\/g, '/');
+      fs.renameSync(tempPath, originalPath);
+
+      const postCardFilename = appendToFilename(file.filename, '-post-card');
+      const postCardPath = path.join(postDir, postCardFilename);
+      await sharp(originalPath)
+        .resize(260, 260, {
+          fit: 'cover',
+          position: 'left top'
+        })
+        .toFile(postCardPath);
+      
+      const featuredFilename = appendToFilename(file.filename, '-featured');
+      const featuredPath = path.join(postDir, featuredFilename)
+      await sharp(originalPath)
+        .resize(1200, 1200, {
+          fit: 'cover',
+          position: 'left top'
+        })
+        .toFile(featuredPath);
     }
 
     const [post] = await req.db.query(`
@@ -105,7 +188,8 @@ router.put('/', upload.single('image'), async function (req, res) {
         date_published = IF((${published} = 1 AND date_published is NULL), UTC_TIMESTAMP(), date_published),
         date_edited = IF((${published} = 1 AND date_published is not NULL), UTC_TIMESTAMP(), date_edited), 
         is_published = ${published}
-      WHERE id = :id`, 
+      WHERE id = :id
+        AND user_id = ${user.userId}`, 
       {
         id: req.body.id,
         title: req.body.title,
@@ -115,6 +199,7 @@ router.put('/', upload.single('image'), async function (req, res) {
         image: file === undefined ? postCheck[0].image : imageURL,
       }
     );
+
     res.json({Success: true})
 
   } catch (error) {
@@ -122,6 +207,9 @@ router.put('/', upload.single('image'), async function (req, res) {
     res.json({Success: false})
   };
 });
+
+
+
 
 router.delete('/:id', async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
