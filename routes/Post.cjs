@@ -36,7 +36,7 @@ router.post('/', upload.single('image'), async function (req, res) {
   const file = req.file;
   const postId = req.body.id;
   const timeStamp = new Date().getTime();
-  const imagePath = `ProjectB/posts/${postId}`;
+  const imagePath = `ProjectB/posts/${postId}/`;
 
   try {
     let published = req.body.type === 'publish' ? 1 : 0;
@@ -103,7 +103,7 @@ router.put('/', upload.single('image'), async function (req, res) {
   const file = req.file;
   const postId = req.body.id;
   const timeStamp = new Date().getTime();
-  const imagePath = `ProjectB/posts/${postId}`;
+  const imagePath = `ProjectB/posts/${postId}/`;
 
   try {
     let published = req.body.type === 'publish' ? 1 : 0;

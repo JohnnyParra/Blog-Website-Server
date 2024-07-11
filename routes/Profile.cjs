@@ -22,7 +22,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
   const file = req.file;
   const userId = user.userId;
   const timeStamp = new Date().getTime();
-  const imagePath = `ProjectB/avatars/${userId}`;
+  const imagePath = `ProjectB/avatars/${userId}/`;
 
   try {
     const [[dbUser]] = await req.db.query(`SELECT * FROM users WHERE id = :id`, { id: user.userId });
