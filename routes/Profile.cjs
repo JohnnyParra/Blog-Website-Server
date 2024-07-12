@@ -40,7 +40,13 @@ router.put('/', upload.single('avatar'), async function (req, res) {
           WHERE id = ${user.userId}
           `)
           if (image[0].avatar) {
-            await del(imagePath)
+            const listResult = await list ({
+              prefix: imagePath
+            })
+            
+            if (listResult.blobs.length > 0) {
+              await del(listResult.blobs.map((blob) => blob.url));
+            }
           }
         } catch (err) {
           console.log("delete image error: ", err);

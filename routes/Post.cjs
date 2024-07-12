@@ -123,7 +123,7 @@ router.put('/', upload.single('image'), async function (req, res) {
         })
         
         if (listResult.blobs.length > 0) {
-          listResult.blobs.map((blob) => console.log(blob.url));
+          await del(listResult.blobs.map((blob) => blob.url));
         }
       }
       
