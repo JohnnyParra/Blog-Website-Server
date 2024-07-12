@@ -17,7 +17,7 @@ router.get('/:search/:page', async (req, res) => {
     const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
     const [posts] = await req.db.query(`
-      SELECT * From posts p
+      SELECT id, user_id, title, description, author, category, image, image_metadata, date_published From posts p
       WHERE LOWER(title) LIKE LOWER("%${search}%") 
         OR LOWER(description) LIKE LOWER("%${search}%")
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
