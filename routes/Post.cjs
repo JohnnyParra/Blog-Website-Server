@@ -63,12 +63,8 @@ router.post('/', upload.single('image'), async function (req, res) {
   const tempPath = `./public/uploads/temp/${file?.filename}`;
 
   try {
-    let published;
-    if(req.body.type === 'publish'){
-      published = 1;
-    } else if( req.body.type === 'save'){
-      published = 0;
-    }
+    let published = req.body.type === 'publish' ? 1 : 0;
+    let imageMetaData;
 
     if (file) {
       const postId = req.body.id;
@@ -76,15 +72,13 @@ router.post('/', upload.single('image'), async function (req, res) {
       ensureDirectoryExistence(postDir);
 
       const originalPath = path.join(postDir, file.filename);
-      imageURL += originalPath.replace(/^\/|\\/g, '/');
       fs.renameSync(tempPath, originalPath);
 
       const postCardFilename = appendToFilename(file.filename, '-post-card');
       const postCardPath = path.join(postDir, postCardFilename);
       await sharp(originalPath)
         .resize(260, 260, {
-          fit: 'cover',
-          position: 'left top'
+          fit: 'outside',
         })
         .toFile(postCardPath);
       
@@ -96,11 +90,25 @@ router.post('/', upload.single('image'), async function (req, res) {
           position: 'left top'
         })
         .toFile(featuredPath);
+
+      let originalUrl = imageURL + originalPath.replace(/^\/|\\/g, '/');
+      let postCardUrl = imageURL + postCardPath.replace(/^\/|\\/g, '/');
+      let featuredUrl = imageURL + featuredPath.replace(/^\/|\\/g, '/');
+
+      imageMetaData = {
+        original: originalUrl,
+        postCard: postCardUrl,
+        featured: featuredUrl,
+        pathname: file.pathname,
+        contentType: file.contentType,
+        originalSizeKB: (file.size / 1024).toFixed(2),
+      }
+      imageURL = originalUrl;
     }
 
     const [post] = await req.db.query(`
-      INSERT INTO posts (id, user_id, title, description, author, content, category, image, is_published, date_published, date_deleted)
-      VALUES (:id, ${user.userId}, :title, :description, '${user.name}', :content, :category, :image, ${published}, IF(${published} = 1, UTC_TIMESTAMP(), NULL), NULL)`, 
+      INSERT INTO posts (id, user_id, title, description, author, content, category, image, image_metadata, is_published, date_published, date_deleted)
+      VALUES (:id, ${user.userId}, :title, :description, '${user.name}', :content, :category, :image, :image_metadata, ${published}, IF(${published} = 1, UTC_TIMESTAMP(), NULL), NULL)`, 
       {
         id: req.body.id,
         title: req.body.title,
@@ -108,6 +116,7 @@ router.post('/', upload.single('image'), async function (req, res) {
         content: req.body.content,
         category: req.body.category,
         image: file === undefined ? '' : imageURL,
+        image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData),
       }
     );
     res.json({Success: true})
@@ -129,12 +138,9 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
   const tempPath = `./public/uploads/temp/${file?.filename}`;
 
   try {
-    let published;
-    if(req.body.type === 'publish'){
-      published = 1;
-    } else if( req.body.type === 'save'){
-      published = 0;
-    }
+    let published = req.body.type === 'publish' ? 1 : 0;
+    let imageMetaData;
+
     const [postCheck] = await req.db.query(`
     SELECT image FROM posts
     WHERE id = :id`,
@@ -156,15 +162,13 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
       ensureDirectoryExistence(postDir);
 
       const originalPath = path.join(postDir, file.filename);
-      imageURL += originalPath.replace(/^\/|\\/g, '/');
       fs.renameSync(tempPath, originalPath);
 
       const postCardFilename = appendToFilename(file.filename, '-post-card');
       const postCardPath = path.join(postDir, postCardFilename);
       await sharp(originalPath)
         .resize(260, 260, {
-          fit: 'cover',
-          position: 'left top'
+          fit: 'outside',
         })
         .toFile(postCardPath);
       
@@ -176,6 +180,20 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
           position: 'left top'
         })
         .toFile(featuredPath);
+
+      let originalUrl = imageURL + originalPath.replace(/^\/|\\/g, '/');
+      let postCardUrl = imageURL + postCardPath.replace(/^\/|\\/g, '/');
+      let featuredUrl = imageURL + featuredPath.replace(/^\/|\\/g, '/');
+
+      imageMetaData = {
+        original: originalUrl,
+        postCard: postCardUrl,
+        featured: featuredUrl,
+        pathname: file.pathname,
+        contentType: file.contentType,
+        originalSizeKB: (file.size / 1024).toFixed(2),
+      }
+      imageURL = originalUrl;
     }
 
     const [post] = await req.db.query(`
@@ -185,6 +203,7 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
         content = :content, 
         category = :category, 
         image = :image, 
+        image_metadata = :image_metadata,
         date_published = IF((${published} = 1 AND date_published is NULL), UTC_TIMESTAMP(), date_published),
         date_edited = IF((${published} = 1 AND date_published is not NULL), UTC_TIMESTAMP(), date_edited), 
         is_published = ${published}
@@ -197,6 +216,7 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
         content: req.body.content,
         category: req.body.category,
         image: file === undefined ? postCheck[0].image : imageURL,
+        image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData),
       }
     );
 

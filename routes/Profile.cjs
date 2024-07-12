@@ -45,6 +45,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
     const compare = await bcrypt.compare(req.body.password, dbPassword);
 
     if(compare){
+      let avatarMetaData;
       const [image] = await req.db.query(`
         SELECT avatar FROM users
         WHERE id = ${user.userId}
@@ -66,7 +67,6 @@ router.put('/', upload.single('avatar'), async function (req, res) {
         ensureDirectoryExistence(avatarDir);
   
         const originalPath = path.join(avatarDir, file.filename);
-        imageURL += originalPath.replace(/^\/|\\/g, '/');
         fs.renameSync(tempPath, originalPath);
   
         const avatarFilename = appendToFilename(file.filename, '-small');
@@ -76,16 +76,29 @@ router.put('/', upload.single('avatar'), async function (req, res) {
             fit: 'outside',
           })
           .toFile(avatarPath);
+
+      let originalUrl = imageURL + originalPath.replace(/^\/|\\/g, '/');
+      let smallUrl = imageURL + avatarPath.replace(/^\/|\\/g, '/');
+
+      avatarMetaData = {
+        original: originalUrl,
+        small: smallUrl,
+        pathname: file.pathname,
+        contentType: file.contentType,
+        originalSizeKB: (file.size / 1024).toFixed(2),
+      }
+      imageURL = originalUrl;
       }
 
       const [avatar] = await req.db.query(`
       UPDATE users
-      SET avatar = :avatar, email = :email, name = :name
+      SET avatar = :avatar, avatar_metadata = :avatar_metadata, email = :email, name = :name
       WHERE id = ${user.userId}`, 
       {
         name: req.body.name,
         email: req.body.email,
-        avatar: file === undefined ? dbUser.avatar : imageURL
+        avatar: file === undefined ? dbUser.avatar : imageURL,
+        avatar_metadata: file === undefined ? NULL : JSON.stringify(avatarMetaData)
       });
     res.json({Success: true})
     } else{
