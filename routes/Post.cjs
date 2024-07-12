@@ -59,7 +59,7 @@ router.post('/', upload.single('image'), async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY);
   const file = req.file;
-  const imageURL = `http://localhost:3000/`;
+  let imageURL = `http://localhost:3000/`;
   const tempPath = `./public/uploads/temp/${file?.filename}`;
 
   try {
