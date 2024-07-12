@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
   const user = jwt.verify(token, process.env.JWT_KEY)
 try {
   const [userInfo] = await req.db.query(`
-  SELECT id, name, email, date_created, color, avatar FROM users
+  SELECT id, name, email, date_created, color, avatar, avatar_metadata FROM users
   WHERE id = ${user.userId}`
   ); 
   userInfo[0].avatar = appendToFilename(userInfo[0].avatar, '-small');
