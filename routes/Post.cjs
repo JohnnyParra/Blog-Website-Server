@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const express = require("express");
-const { put, del } = require("@vercel/blob")
+const { put, list, del } = require("@vercel/blob")
 const multer = require('multer');
 const router = express.Router();
 const storage = multer.memoryStorage();
@@ -118,7 +118,13 @@ router.put('/', upload.single('image'), async function (req, res) {
       WHERE id = :id`,
       {id: req.body.id})
       if (postCheck[0].image) {
-        await del(imagePath)
+        const listResult = await list ({
+          prefix: imagePath
+        })
+        
+        if (listResult.blobs.length > 0) {
+          listResult.blobs.map((blob) => console.log(blob.url));
+        }
       }
       
     } catch (err) {
