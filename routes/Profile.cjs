@@ -68,7 +68,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
           put(smallBlobName, smallAvatar, {access: 'public'}),
         ])
 
-        const originalBlobSize = Buffer.byteLength(originalImage) / 1024;
+        const originalBlobSize = Buffer.byteLength(originalAvatar) / 1024;
         imageMetaData = {
           original: originalBlob.url,
           small: smallBlob.url,
