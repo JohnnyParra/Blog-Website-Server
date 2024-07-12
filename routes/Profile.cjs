@@ -81,7 +81,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
 
       const [avatar] = await req.db.query(`
       UPDATE users
-      SET avatar = :avatar, avatar_metadata = avatar_metadata, email = :email, name = :name
+      SET avatar = :avatar, avatar_metadata = :avatar_metadata, email = :email, name = :name
       WHERE id = ${user.userId}`, 
       {
         name: req.body.name,
