@@ -12,7 +12,8 @@ router.get('/:search/:page', async (req, res) => {
       SELECT COUNT(*) as count From posts p
       WHERE (LOWER(title) LIKE LOWER("%${search}%") 
         OR LOWER(description) LIKE LOWER("%${search}%"))
-        AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)`
+        AND p.date_deleted is NULL
+        AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)`
     );
     const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 

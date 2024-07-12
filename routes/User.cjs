@@ -32,16 +32,18 @@ router.get('/posts/liked/:page', async (req, res) => {
       WHERE posts.id IN(
         SELECT post_id FROM post_likes
         WHERE post_likes.user_id = ${user.userId}
-      )`
+      )
+        AND date_deleted is NULL`
     );
     const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
     const [posts] = await req.db.query(`
-    SELECT * FROM posts
+    SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts
     WHERE posts.id IN(
       SELECT post_id FROM post_likes
       WHERE post_likes.user_id = ${user.userId}
     )
+      AND date_deleted is NULL
     ORDER BY posts.date_published DESC
     LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
   );
