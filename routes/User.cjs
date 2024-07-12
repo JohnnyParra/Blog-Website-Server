@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
 
   try {
     const [userInfo] = await req.db.query(`
-    SELECT id, name, email, date_created, color, avatar FROM users
+    SELECT id, name, email, date_created, color, avatar, avatar_metadata FROM users
     WHERE id = ${user.userId}`
     ); 
     res.json({ user, userInfo });
