@@ -20,6 +20,7 @@ router.get('/:search/:page', async (req, res) => {
       SELECT id, user_id, title, description, author, category, image, image_metadata, date_published From posts p
       WHERE LOWER(title) LIKE LOWER("%${search}%") 
         OR LOWER(description) LIKE LOWER("%${search}%")
+        AND p.date_deleted is NULL
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND date_deleted is NULL)
       LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
     );
