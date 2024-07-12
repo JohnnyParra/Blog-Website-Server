@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const express = require("express");
-const { put, del } = require("@vercel/blob")
+const { put, list, del } = require("@vercel/blob")
 const multer = require('multer');
 const bcrypt = require('bcrypt');
 const router = express.Router();
@@ -55,7 +55,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
         }
 
         const originalAvatar = file.buffer;
-        const smallAvatar = await sharp(originalPath)
+        const smallAvatar = await sharp(originalAvatar)
           .resize(80, 80, {
             fit: 'outside',
           }).toBuffer();
