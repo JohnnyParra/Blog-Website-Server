@@ -15,6 +15,10 @@ router.get('/:search/:page', async (req, res) => {
         AND p.date_deleted is NULL
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)`
     );
+    if (!count[0]['count']) {
+      return res.status(404).json({ message: 'No Results Found' });
+    }
+    
     const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
     const [posts] = await req.db.query(`
@@ -25,11 +29,11 @@ router.get('/:search/:page', async (req, res) => {
         AND p.user_id in (SELECT id FROM users u WHERE p.user_id = u.id AND u.date_deleted is NULL)
       LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
     );
-    res.json({ posts, count, hasMore, nextPage });
+    res.status(200).json({ posts, count: count[0]['count'], hasMore, nextPage });
     
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

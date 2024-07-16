@@ -8,121 +8,139 @@ function appendToFilename(filename, string) {
 }
 
 router.get('/', async (req, res) => {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-try {
-  const [userInfo] = await req.db.query(`
-  SELECT id, name, email, date_created, color, avatar, avatar_metadata FROM users
-  WHERE id = ${user.userId}`
-  ); 
-  userInfo[0].avatar = appendToFilename(userInfo[0].avatar, '-small');
-  res.json({ user, userInfo });
-} catch (err) {
-  console.log(err);
-  res.json({ err });
-}
+  try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY)
+
+    const [userInfo] = await req.db.query(`
+    SELECT id, name, email, date_created, color, avatar, avatar_metadata FROM users
+    WHERE id = ${user.userId}`
+    ); 
+    if (!userInfo.length) {
+      console.error('Error in UserInfo get /User/');
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    userInfo[0].avatar = appendToFilename(userInfo[0].avatar, '-small');
+    res.status(200).json({ user, userInfo: userInfo[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' })
+  }
 });
 
 
 router.get('/posts/liked/:page', async (req, res) => {
-const [scheme, token] = req.headers.authorization.split(' ');
-const user = jwt.verify(token, process.env.JWT_KEY);
-const page = Number(req.params.page) - 1;
-const nextPage = Number(req.params.page) + 1;
-const itemsPerPage = 10;
+  try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
 
-try {
-  const [count] = await req.db.query(`
-    SELECT COUNT(*) as count FROM posts
-    WHERE posts.id IN(
-      SELECT post_id FROM post_likes
-      WHERE post_likes.user_id = ${user.userId}
-    )`
-  );
-  const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
+    const page = Number(req.params.page) - 1;
+    const nextPage = Number(req.params.page) + 1;
+    const itemsPerPage = 10;
 
-  const [posts] = await req.db.query(`
-  SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts
-  WHERE posts.id IN(
-    SELECT post_id FROM post_likes
-    WHERE post_likes.user_id = ${user.userId}
-  )
-    AND date_deleted is NULL
-  ORDER BY posts.date_published DESC
-  LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
-);
+    const [count] = await req.db.query(`
+      SELECT COUNT(*) as count FROM posts
+      WHERE posts.id IN(
+        SELECT post_id FROM post_likes
+        WHERE post_likes.user_id = ${user.userId}
+      )`
+    );
+    if (!count.length) {
+      return res.status(404).json({ message: 'No liked posts found' });
+    }
 
-  res.json({ posts, count, hasMore, nextPage });
-} catch (err) {
-  console.log(err);
-  res.json({ err });
-}
+    const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
+
+    const [posts] = await req.db.query(`
+      SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts
+      WHERE posts.id IN(
+        SELECT post_id FROM post_likes
+        WHERE post_likes.user_id = ${user.userId}
+      )
+        AND date_deleted is NULL
+      ORDER BY posts.date_published DESC
+      LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
+    );
+
+    res.status(200).json({ posts, count: count[0]['count'], hasMore, nextPage });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 router.get('/posts/:published/:page', async (req, res) => {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const published = req.params.published;
-  const page = Number(req.params.page) - 1;
-  const nextPage = Number(req.params.page) + 1;
-  const itemsPerPage = 10;
-  
   try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const published = req.params.published;
+    const page = Number(req.params.page) - 1;
+    const nextPage = Number(req.params.page) + 1;
+    const itemsPerPage = 10;
+
+    let countQuery;
+    let postQuery;
     if (published === 'deleted') {
-      const [count] = await req.db.query(`
+      countQuery = `
         SELECT COUNT(*) as count FROM posts p
         WHERE p.user_id = ${user.userId}
-          AND p.date_deleted is not NULL`
-      );
-      const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
-
-      let [posts] = await req.db.query(`
+          AND p.date_deleted is not NULL
+      `;
+      postQuery = `
         SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts
         WHERE user_id = ${user.userId} 
           AND date_deleted is not NULL
         ORDER BY date_published DESC
-        LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
-      );
-      res.json({ posts, count, hasMore, nextPage });
+        LIMIT ${page * itemsPerPage}, ${itemsPerPage}
+      `;
     } else {
-      const [count] = await req.db.query(`
+      countQuery = `
         SELECT COUNT(*) as count FROM posts p
         WHERE p.user_id = ${user.userId}
           AND is_published = ${published}
-          AND p.date_deleted is NULL`
-      );
-      const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
-
-      let [posts] = await req.db.query(`
+          AND p.date_deleted is NULL
+      `;
+      postQuery = `
         SELECT id, user_id, title, description, author, category, image, image_metadata, date_published FROM posts
         WHERE user_id = ${user.userId} 
           AND is_published = ${published}
           AND date_deleted is NULL
         ORDER BY date_published DESC
-        LIMIT ${page * itemsPerPage}, ${itemsPerPage}`
-      );
-      res.json({ posts, count, hasMore, nextPage });
+        LIMIT ${page * itemsPerPage}, ${itemsPerPage}
+      ;`
     }
+    const [count] = await req.db.query(countQuery);
+    if (!count.length) {
+      return res.status(404).json({ message: 'No posts found' });
+    }
+
+    const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
+    const [posts] = await req.db.query(postQuery);
+
+    res.status(200).json({ posts, count: count[0]['count'], hasMore, nextPage });
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
   });
 
   router.delete('/', async (req, res) => {
+    try {
     const [scheme, token] = req.headers.authorization.split(' ');
     const user = jwt.verify(token, process.env.JWT_KEY)
-    console.log('user: ', user)
-  try {
-    const [userInfo] = await req.db.query(`
+
+    await req.db.query(`
     UPDATE users
     SET date_deleted = UTC_TIMESTAMP()
     WHERE id = ${user.userId};`
     ); 
-    res.json({ Success: true });
+
+    res.status(204).send();
   } catch (err) {
-    console.log(err);
-    res.json({ Success: false, err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
   });
 
