@@ -88,8 +88,8 @@ router.post('/', upload.single('image'), async function (req, res) {
         description: req.body.description,
         content: req.body.content,
         category: req.body.category,
-        image: file === undefined ? NULL : imageUrl,
-        image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData)
+        image: file === undefined ? null : imageUrl,
+        image_metadata: file === undefined ? null : JSON.stringify(imageMetaData)
       }
     );
     res.json({Success: true})
@@ -114,7 +114,7 @@ router.put('/', upload.single('image'), async function (req, res) {
 
     try {
       const [postCheck] = await req.db.query(`
-      SELECT image FROM posts
+      SELECT image, image_metadata FROM posts
       WHERE id = :id`,
       {id: req.body.id})
       if (postCheck[0].image) {
@@ -188,7 +188,7 @@ router.put('/', upload.single('image'), async function (req, res) {
         content: req.body.content,
         category: req.body.category,
         image: file === undefined ? postCheck[0].image : imageUrl,
-        image_metadata: file === undefined ? NULL : JSON.stringify(imageMetaData)
+        image_metadata: file === undefined ? JSON.stringify(postCheck[0].image_metadata) : JSON.stringify(imageMetaData)
       }
     );
     res.json({Success: true})

@@ -49,7 +49,7 @@ router.delete('/:id', async function (req, res) {
   const [scheme, token] = req.headers.authorization.split(' ');
   const user = jwt.verify(token, process.env.JWT_KEY)
   const post_id = req.params.id;
-  console.log('deleted like: ', post_id, user.userId);
+
   try{
     const [task] = await req.db.query(`
       DELETE FROM post_likes 
