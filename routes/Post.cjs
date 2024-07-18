@@ -16,30 +16,32 @@ function appendToFilename(filename, string) {
 }
 
 router.get('/:id', async (req, res) => {
-  const post_id = req.params.id;
-
   try {
+    const post_id = req.params.id;
+
     const [post] = await req.db.query(`
       SELECT * FROM posts
       WHERE id = '${post_id}'`
     );
-    res.json({ post });
+
+    res.status(200).json({ post });
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.post('/', upload.single('image'), async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const file = req.file;
-  const postId = req.body.id;
-  const timeStamp = new Date().getTime();
-  const imagePath = `ProjectB/posts/${postId}/`;
-  let imageUrl;
-
   try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const file = req.file;
+    const postId = req.body.id;
+    const timeStamp = new Date().getTime();
+    const imagePath = `ProjectB/posts/${postId}/`;
+
+    let imageUrl;
     let published = req.body.type === 'publish' ? 1 : 0;
     let imageMetaData = {};
 
@@ -79,7 +81,7 @@ router.post('/', upload.single('image'), async function (req, res) {
       imageUrl = originalBlob.url;
     }
 
-    const [post] = await req.db.query(`
+    await req.db.query(`
       INSERT INTO posts (id, user_id, title, description, author, content, category, image, image_metadata, is_published, date_published, date_deleted)
       VALUES (:id, ${user.userId}, :title, :description, '${user.name}', :content, :category, :image, :image_metadata, ${published}, IF(${published} = 1, UTC_TIMESTAMP(), NULL), NULL)`, 
       {
@@ -92,24 +94,25 @@ router.post('/', upload.single('image'), async function (req, res) {
         image_metadata: file === undefined ? null : JSON.stringify(imageMetaData)
       }
     );
-    res.json({Success: true})
 
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
+    res.status(201).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   };
 });
 
 router.put('/', upload.single('image'), async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const file = req.file;
-  const postId = req.body.id;
-  const timeStamp = new Date().getTime();
-  const imagePath = `ProjectB/posts/${postId}/`;
-  let imageUrl;
-
   try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const file = req.file;
+    const postId = req.body.id;
+    const timeStamp = new Date().getTime();
+    const imagePath = `ProjectB/posts/${postId}/`;
+
+    let imageUrl;
     let published = req.body.type === 'publish' ? 1 : 0;
 
     try {
@@ -128,9 +131,7 @@ router.put('/', upload.single('image'), async function (req, res) {
       }
       
     } catch (err) {
-      console.log("delete image error: ", err);
-    } finally {
-      console.log("Image deleted")
+      console.error("delete image error: ", err);
     }
 
     if (file) {
@@ -168,7 +169,7 @@ router.put('/', upload.single('image'), async function (req, res) {
       imageUrl = originalBlob.url;
     }
 
-    const [post] = await req.db.query(`
+    await req.db.query(`
       UPDATE posts
       SET title = :title, 
         description = :description, 
@@ -191,30 +192,31 @@ router.put('/', upload.single('image'), async function (req, res) {
         image_metadata: file === undefined ? JSON.stringify(postCheck[0].image_metadata) : JSON.stringify(imageMetaData)
       }
     );
-    res.json({Success: true})
 
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   };
 });
 
 router.delete('/:id', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const post_id = req.params.id;
-
   try{
-    const [task] = await req.db.query(`
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const post_id = req.params.id;
+
+    await req.db.query(`
       UPDATE posts
       SET date_deleted = UTC_TIMESTAMP()  
       WHERE posts.id = '${post_id}' AND posts.user_id = ${user.userId}`,{hello: 'hello'}
     );
-    res.json({Success: true })
 
-  } catch (error){
-    console.log('error', error)
-    res.json({Success: false})
+    res.status(204).send();
+  } catch (err){
+    console.error(err)
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
