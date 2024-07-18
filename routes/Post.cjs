@@ -6,13 +6,20 @@ const path = require('path');
 const router = express.Router();
 const sharp = require('sharp');
 
-
 function ensureDirectoryExistence(dir) {
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(dir, { recursive: true }, err => {
+      if (err) {
+        console.error("make directory error: ", err);
+      }
+    });
   }
 }
 
+function appendToFilename(filename, string) {
+  let dotIndex = filename.lastIndexOf(".");
+  return filename.substring(0, dotIndex) + string + filename.substring(dotIndex);
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -24,48 +31,37 @@ const storage = multer.diskStorage({
   }
 })
 
-
 const upload = multer({
   storage: storage,
 });
 
-
-function appendToFilename(filename, string) {
-  let dotIndex = filename.lastIndexOf(".");
-  return filename.substring(0, dotIndex) + string + filename.substring(dotIndex);
-}
-
-
-
 router.get('/:id', async (req, res) => {
-  const post_id = req.params.id;
-
   try {
+    const post_id = req.params.id;
+
     const [post] = await req.db.query(`
       SELECT * FROM posts
       WHERE id = '${post_id}'`
     );
-    res.json({ post });
+
+    res.status(200).json({ post });
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
-
-
-
 router.post('/', upload.single('image'), async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY);
-  const file = req.file;
-  let imageURL = `http://localhost:3000/`;
-  const tempPath = `./public/uploads/temp/${file?.filename}`;
-
   try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const file = req.file;
+    let imageURL = `http://localhost:3000/`;
+    const tempPath = `./public/uploads/temp/${file?.filename}`;
+
     let published = req.body.type === 'publish' ? 1 : 0;
     let imageMetaData;
-
     if (file) {
       const postId = req.body.id;
       const postDir = `./public/uploads/${postId}`;
@@ -106,7 +102,7 @@ router.post('/', upload.single('image'), async function (req, res) {
       imageURL = originalUrl;
     }
 
-    const [post] = await req.db.query(`
+    await req.db.query(`
       INSERT INTO posts (id, user_id, title, description, author, content, category, image, image_metadata, is_published, date_published, date_deleted)
       VALUES (:id, ${user.userId}, :title, :description, '${user.name}', :content, :category, :image, :image_metadata, ${published}, IF(${published} = 1, UTC_TIMESTAMP(), NULL), NULL)`, 
       {
@@ -119,25 +115,23 @@ router.post('/', upload.single('image'), async function (req, res) {
         image_metadata: file === undefined ? null : JSON.stringify(imageMetaData),
       }
     );
-    res.json({Success: true})
 
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
+    res.status(201).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   };
 });
 
-
-
-
-router.put('/', upload.single('image'), async function (req, res) { //300x225 1200x350
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const file = req.file;
-  let imageURL = 'http://localhost:3000/';
-  const tempPath = `./public/uploads/temp/${file?.filename}`;
-
+router.put('/', upload.single('image'), async function (req, res) {
   try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const file = req.file;
+    let imageURL = 'http://localhost:3000/';
+    const tempPath = `./public/uploads/temp/${file?.filename}`;
+
     let published = req.body.type === 'publish' ? 1 : 0;
     let imageMetaData;
 
@@ -146,17 +140,15 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
     WHERE id = :id`,
     {id: req.body.id})
 
-    
     if (file) {
       if (postCheck[0].image) {
         fs.rmSync(`./public/uploads/${req.body.id}`, {recursive: true, force: true}, err => {
           if (err) {
-            console.log("delete image error: ", err);
-          } else {
-            console.log("Image deleted")
+            console.error("delete image error: ", err);
           }
         })
       }
+
       const postId = req.body.id;
       const postDir = `./public/uploads/${postId}`;
       ensureDirectoryExistence(postDir);
@@ -196,7 +188,7 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
       imageURL = originalUrl;
     }
 
-    const [post] = await req.db.query(`
+    await req.db.query(`
       UPDATE posts
       SET title = :title, 
         description = :description, 
@@ -219,34 +211,31 @@ router.put('/', upload.single('image'), async function (req, res) { //300x225 12
         image_metadata: file === undefined ? JSON.stringify(postCheck[0].image_metadata) : JSON.stringify(imageMetaData),
       }
     );
-
-    res.json({Success: true})
-
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
+    
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   };
 });
 
-
-
-
 router.delete('/:id', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const post_id = req.params.id;
-  console.log('deleted post: ', post_id, user.userId);
   try{
-    const [task] = await req.db.query(`
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const post_id = req.params.id;
+
+    await req.db.query(`
       UPDATE posts
       SET date_deleted = UTC_TIMESTAMP()  
-      WHERE posts.id = '${post_id}' AND posts.user_id = ${user.userId}`,{hello: 'hello'}
+      WHERE posts.id = '${post_id}' AND posts.user_id = ${user.userId}`,
     );
-    res.json({Success: true })
-
-  } catch (error){
-    console.log('error', error)
-    res.json({Success: false})
+    
+    res.status(204).send();
+  } catch (err){
+    console.error(err)
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

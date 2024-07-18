@@ -3,11 +3,12 @@ const express = require("express");
 const router = express.Router();
 
 router.get('/:id', async (req, res) => {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const post_id = req.params.id;
-
   try {
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const post_id = req.params.id;
+
     const [likes] = await req.db.query(`
       SELECT COUNT(post_id) AS Likes FROM post_likes l
       WHERE l.post_id = "${post_id}"
@@ -17,49 +18,50 @@ router.get('/:id', async (req, res) => {
       SELECT COUNT(user_id) AS userLike FROM post_likes
       WHERE post_id = "${post_id}" AND user_id = ${user.userId}`
     );
-    res.json({ likes, userLike });
+
+    res.status(200).json({ likes, userLike });
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.post('/', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  console.log('like added: ',req.body);
-
   try {
-    const [like] = await req.db.query(`
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    await req.db.query(`
       INSERT INTO post_likes (post_id, user_id)
       VALUES (:id, ${user.userId})`,
       {
       id: req.body.id,
       }
     );
-    res.json({Success: true})
 
-  } catch (error) {
-    console.log('error', error);
-    res.json({Success: false})
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   };
 });
 
 router.delete('/:id', async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(' ');
-  const user = jwt.verify(token, process.env.JWT_KEY)
-  const post_id = req.params.id;
-  console.log('deleted like: ', post_id, user.userId);
   try{
-    const [task] = await req.db.query(`
-      DELETE FROM post_likes 
-      WHERE post_likes.post_id = "${post_id}" AND post_likes.user_id = ${user.userId}`,{hello: 'bye'}
-    );
-    res.json({Success: true })
+    const [scheme, token] = req.headers.authorization.split(' ');
+    const user = jwt.verify(token, process.env.JWT_KEY);
 
-  } catch (error){
-    console.log('error', error)
-    res.json({Success: false})
+    const post_id = req.params.id;
+
+    await req.db.query(`
+      DELETE FROM post_likes 
+      WHERE post_likes.post_id = "${post_id}" AND post_likes.user_id = ${user.userId}`,
+    );
+
+    res.status(204).json({ message: 'Internal Server Error' });
+  } catch (err){
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
