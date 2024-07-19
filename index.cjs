@@ -60,16 +60,17 @@ app.use(async (req, res, next) => {
     await req.db.query(`SET time_zone = '+00:00'`);
 
     // Moves the request on down the line to the n ext middleware functions and/or the endpoint it's headed for
-    await next();
+    next();
 
     // After the endpoint has been reached and resolved, disconnects from the database
     req.db.release();
   } catch (err) {
-    // If anything downstream throw an error, we must release the connection allocated for the request
-    console.log(err)
-    // If an error occurs, disconnects from the database
-    if (req.db) req.db.release();
-    throw err;
+    console.error(err)
+    if (req.db) {
+      req.db.release();
+      return res.status(503).json({ message: 'Failed to connect to server' });
+    }
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
@@ -83,22 +84,21 @@ app.use("/search", searchRoute);
 
 // Jwt verification checks to see if there is an authorization header with a valid jwt in it.
 app.use(async function verifyJwt(req, res, next) {
-  // console.log(req.headers.authorization)
-  if (!req.headers.authorization) {
-    return res.status(401).json({error: 'Invalid authorization, no authorization headers'});
-  }
-
-  const [scheme, token] = req.headers.authorization.split(' ');
-
-  if (scheme !== 'Bearer') {
-    return res.status(401).json({error: 'Invalid authorization, invalid authorization scheme'});
-  }
-
   try {
+    if (!req.headers.authorization) {
+      return res.status(401).json({error: 'Invalid authorization, no authorization headers'});
+    }
+  
+    const [scheme, token] = req.headers.authorization.split(' ');
+    if (scheme !== 'Bearer') {
+      return res.status(401).json({error: 'Invalid authorization, invalid authorization scheme'});
+    }
+
     const payload = jwt.verify(token, process.env.JWT_KEY);
     req.user = payload;
+
   } catch (err) {
-    console.log(err);
+    console.error(err);
     if (
       err.message && 
       (err.message.toUpperCase() === 'INVALID TOKEN' || 
