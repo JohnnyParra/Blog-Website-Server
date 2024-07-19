@@ -59,7 +59,7 @@ router.delete('/:id', async function (req, res) {
     );
 
     res.status(204).send();
-  } catch (error){
+  } catch (err){
     console.error(err);
     res.status(500).json({ message: 'Internal Server Error' });
   }

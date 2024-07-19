@@ -113,7 +113,7 @@ router.get('/:category/:sort/:page', async (req, res) => {
     
     res.status(200).json({ posts, count: countNumber, hasMore, nextPage });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.json({ err });
   }
 });

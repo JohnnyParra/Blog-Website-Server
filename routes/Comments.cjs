@@ -3,66 +3,72 @@ const express = require("express");
 const router = express.Router();
 
 router.get("/likes/:id", async (req, res) => {
-  const [scheme, token] = req.headers.authorization.split(" ");
-  const user = jwt.verify(token, process.env.JWT_KEY);
-  const comment_id = req.params.id;
-
   try {
+    const [scheme, token] = req.headers.authorization.split(" ");
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const comment_id = req.params.id;
+
     const [likes] = await req.db.query(`
       SELECT COUNT(comment_id) AS Likes FROM comment_likes l
       WHERE l.comment_id = "${comment_id}"
-      AND l.user_id in (SELECT id FROM users u WHERE l.user_id = u.id AND u.date_deleted is NULL)`);
+      AND l.user_id in (SELECT id FROM users u WHERE l.user_id = u.id AND u.date_deleted is NULL)`
+    );
     const [userLike] = await req.db.query(`
       SELECT COUNT(user_id) AS userLike FROM comment_likes
-      WHERE comment_id = "${comment_id}" AND user_id = ${user.userId}`);
-    res.json({ likes, userLike });
+      WHERE comment_id = "${comment_id}" AND user_id = ${user.userId}`
+    );
+
+    res.status(200).json({ likes, userLike });
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.post("/likes/:id", async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(" ");
-  const user = jwt.verify(token, process.env.JWT_KEY);
-
   try {
-    const [like] = await req.db.query(`
+    const [scheme, token] = req.headers.authorization.split(" ");
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    await req.db.query(`
       INSERT INTO comment_likes (comment_id, user_id)
-      VALUES (${req.params.id}, ${user.userId});`);
-    res.json({ Success: true });
-  } catch (error) {
-    console.log("error", error);
-    res.json({ Success: false });
+      VALUES (${req.params.id}, ${user.userId});`
+    );
+
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.delete("/likes/:id", async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(" ");
-  const user = jwt.verify(token, process.env.JWT_KEY);
-  const comment_id = req.params.id;
-
   try {
-    const [task] = await req.db.query(
-      `
+    const [scheme, token] = req.headers.authorization.split(" ");
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    const comment_id = req.params.id;
+
+    await req.db.query(`
       DELETE FROM comment_likes 
       WHERE comment_likes.comment_id = "${comment_id}" AND comment_likes.user_id = ${user.userId}`,
-      { hello: "bye" }
     );
-    res.json({ Success: true });
-  } catch (error) {
-    console.log("error", error);
-    res.json({ Success: false });
+
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.get("/replies/:id/:page", async (req, res) => {
-  const parent_id = req.params.id;
-  const page = Number(req.params.page) - 1;
-  const nextPage = Number(req.params.page) + 1;
-  const itemsPerPage = 8;
-
   try {
+    const parent_id = req.params.id;
+    const page = Number(req.params.page) - 1;
+    const nextPage = Number(req.params.page) + 1;
+    const itemsPerPage = 8;
+
     const [comments] = await req.db.query(`
       SELECT c.*, u.avatar, u.name FROM comments c
       JOIN users u ON u.id = c.user_id
@@ -76,22 +82,22 @@ router.get("/replies/:id/:page", async (req, res) => {
       SELECT COUNT(*) as total FROM comments
       WHERE parent_id = '${parent_id}' AND date_deleted is NULL
     `);
-
     const hasMore = (page + 1) * itemsPerPage < total[0]['total'];
-    res.json({comments, total, hasMore, nextPage});
+
+    res.status(200).json({ comments, total, hasMore, nextPage });
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.get("/:id/:page", async (req, res) => {
-  const post_id = req.params.id;
-  const page = Number(req.params.page) - 1;
-  const nextPage = Number(req.params.page) + 1;
-  const itemsPerPage = 20;
-
   try {
+    const post_id = req.params.id;
+    const page = Number(req.params.page) - 1;
+    const nextPage = Number(req.params.page) + 1;
+    const itemsPerPage = 20;
+
     const [comments] = await req.db.query(`
       SELECT x.*, COUNT(y.id) as child_count, u.avatar, u.name FROM comments y
       RIGHT JOIN comments x on y.parent_id = x.id
@@ -111,23 +117,21 @@ router.get("/:id/:page", async (req, res) => {
       SELECT COUNT(*) AS count FROM comments
       WHERE post_id = '${post_id}' AND parent_id is NULL
     `);
-
     const hasMore = (page + 1) * itemsPerPage < count[0]['count'];
 
-    res.json({ comments, total, hasMore, nextPage });
+    res.status(200).json({ comments, total, hasMore, nextPage });
   } catch (err) {
-    console.log(err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.post("/", async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(" ");
-  const user = jwt.verify(token, process.env.JWT_KEY);
-
   try {
-    const [comment] = await req.db.query(
-      `
+    const [scheme, token] = req.headers.authorization.split(" ");
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    await req.db.query(`
       INSERT INTO comments (user_id, post_id, text, parent_id, date_created)
       VALUES (${user.userId}, :post_id, :text, :parent_id, UTC_TIMESTAMP)`,
       {
@@ -136,51 +140,54 @@ router.post("/", async function (req, res) {
         parent_id: req.body.parent_id,
       }
     );
-    res.json({ Success: true });
-  } catch (error) {
-    console.log("error", error);
-    res.json({ Success: false });
+
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.put("/", async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(" ");
-  const user = jwt.verify(token, process.env.JWT_KEY);
-
   try {
-    const [comment] = await req.db.query(
-      `
+    const [scheme, token] = req.headers.authorization.split(" ");
+    const user = jwt.verify(token, process.env.JWT_KEY);
+
+    await req.db.query(`
       UPDATE comments
       SET text = :text, date_updated = UTC_TIMESTAMP
-      WHERE id = :comment_id`,
+      WHERE id = :comment_id
+        AND user_id = ${user.userId}`,
       {
         comment_id: req.body.comment_id,
         text: req.body.text,
         parent_id: req.body.parent_id,
       }
     );
-    res.json({ Success: true });
-  } catch (error) {
-    console.log("error", error);
-    res.json({ Success: false });
+
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 router.delete("/:id", async function (req, res) {
-  const [scheme, token] = req.headers.authorization.split(" ");
-  const user = jwt.verify(token, process.env.JWT_KEY);
-  const comment_id = req.params.id;
-
   try {
-    const [deleted] = await req.db.query(`
+    const [scheme, token] = req.headers.authorization.split(" ");
+    const user = jwt.verify(token, process.env.JWT_KEY);
+    const comment_id = req.params.id;
+
+    await req.db.query(`
       UPDATE comments
       SET date_deleted = UTC_TIMESTAMP
       WHERE user_id = ${user.userId} AND id = ${comment_id}`
     );
-    res.json({ Success: true });
-  } catch (error) {
-    console.log("error", error);
-    res.json({ Success: false });
+
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

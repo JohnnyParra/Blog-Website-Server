@@ -97,7 +97,7 @@ router.put('/', upload.single('avatar'), async function (req, res) {
     });
 
     res.status(204).send();
-  } catch (error) {
+  } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal Server Error" });  };
 });
@@ -116,7 +116,7 @@ router.get('/avatar', async function (req, res) {
     }
 
     res.status(200).json({ image });
-  } catch (error) {
+  } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Internal Server Error' });
   };
