@@ -7,14 +7,14 @@ router.post('/register', async function (req, res) {
   try {
     let encodedUser;
     if(Object.values(req.body).indexOf('') > -1){
-      throw new Error('missing fields');
+      return res.status(400).json({ message: 'Missing fields'})
     } else if(req.body.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) == null){
-      throw new Error('Invalid Email');
+      return res.status(400).json({ message: 'Invalid Email' });
     }
+
     // Hashes the password and inserts the info into the `user` table
     await bcrypt.hash(req.body.password, 10).then(async hash => {
       try {
-        console.log('HASHED PASSWORD', hash);
         const [user] = await req.db.query(`
           INSERT INTO users (name, email, password, date_created)
           VALUES (:name, :email, :password, UTC_TIMESTAMP());
@@ -38,16 +38,16 @@ router.post('/register', async function (req, res) {
           process.env.JWT_KEY
         );
 
-        console.log('ENCODED USER', encodedUser);
-      } catch (error) {
-        console.log('error', error);
+      } catch (err) {
+        console.error('jwt error: ',err);
+        return res.status(500).json({ message: 'Database Error' });
       }
     });
 
-    res.json({ jwt: encodedUser });
+    res.status(201).json({ jwt: encodedUser });
   } catch (err) {
-    console.log('err', err);
-    res.json({ err });
+    console.error(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
@@ -55,9 +55,13 @@ router.post('/register', async function (req, res) {
 router.post('/login', async function (req, res) {
   try {
     const { email, password } = req.body;
-    const [[user]] = await req.db.query(`SELECT * FROM users WHERE email = :email AND date_deleted is NULL`, {  email });
 
-    if (!user) return res.json('Email not found');
+    const [[user]] = await req.db.query(`SELECT * FROM users WHERE email = :email AND date_deleted is NULL`, {  email });
+    if (!user) {
+      console.error("email not found");
+      return res.status(400).json({ message: 'Email not found' });
+    };
+
     const dbPassword = `${user.password}`
     const compare = await bcrypt.compare(password, dbPassword);
 
@@ -71,13 +75,14 @@ router.post('/login', async function (req, res) {
       
       const encodedUser = jwt.sign(payload, process.env.JWT_KEY);
 
-      res.json({ jwt: encodedUser });
+      res.status(200).json({ jwt: encodedUser });
     } else {
-      res.json('Password not found');
+      return res.status(401).json({ message: 'Incorrect Password' });
     }
     
   } catch (err) {
-    console.log('Error in /authenticate', err)
+    console.error(err);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

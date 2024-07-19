@@ -58,7 +58,7 @@ router.delete('/:id', async function (req, res) {
       WHERE post_likes.post_id = "${post_id}" AND post_likes.user_id = ${user.userId}`,
     );
 
-    res.status(204).json({ message: 'Internal Server Error' });
+    res.status(204).send();
   } catch (err){
     console.error(err);
     res.status(500).json({ message: 'Internal Server Error' });
