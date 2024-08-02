@@ -41,7 +41,7 @@ router.get('/posts/liked/:page', async (req, res) => {
       )
         AND date_deleted is NULL`
     );
-    if (!count.length) {
+    if (!count[0]['count']) {
       return res.status(404).json({ message: 'No liked posts found' });
     }
     
