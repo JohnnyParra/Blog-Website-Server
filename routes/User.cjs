@@ -112,7 +112,7 @@ router.get('/posts/:published/:page', async (req, res) => {
       ;`
     }
     const [count] = await req.db.query(countQuery);
-    if (!count.length) {
+    if (!count[0]['count']) {
       return res.status(404).json({ message: 'No posts found' });
     }
 

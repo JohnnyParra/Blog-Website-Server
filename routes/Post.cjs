@@ -198,7 +198,8 @@ router.put('/', upload.single('image'), async function (req, res) {
         image_metadata = :image_metadata,
         date_published = IF((${published} = 1 AND date_published is NULL), UTC_TIMESTAMP(), date_published),
         date_edited = IF((${published} = 1 AND date_published is not NULL), UTC_TIMESTAMP(), date_edited), 
-        is_published = ${published}
+        is_published = ${published},
+        date_deleted = NULL
       WHERE id = :id
         AND user_id = ${user.userId}`, 
       {
