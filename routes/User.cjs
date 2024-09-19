@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const express = require("express");
+const VerifyJwt = require("../Middleware/VerifyJwt.cjs")
 const router = express.Router();
 
 function appendToFilename(filename, string) {
@@ -10,7 +11,12 @@ function appendToFilename(filename, string) {
 router.get('/', async (req, res) => {
   try {
     const [scheme, token] = req.headers.authorization.split(' ');
-    const user = jwt.verify(token, process.env.JWT_KEY)
+    let user;
+    try {
+      user = jwt.verify(token, process.env.JWT_KEY);
+    } catch (err) {
+      return res.status(200).json({});
+    }
 
     const [userInfo] = await req.db.query(`
     SELECT id, name, email, date_created, color, avatar, avatar_metadata FROM users
@@ -24,7 +30,7 @@ router.get('/', async (req, res) => {
     userInfo[0].avatar = appendToFilename(userInfo[0].avatar, '-small');
     res.status(200).json({ user, userInfo: userInfo[0] });
   } catch (err) {
-    console.error(err);
+    console.error(err, "");
     res.status(500).json({ message: 'Internal Server Error' })
   }
 });

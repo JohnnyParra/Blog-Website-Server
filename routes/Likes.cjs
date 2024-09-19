@@ -5,7 +5,12 @@ const router = express.Router();
 router.get('/:id', async (req, res) => {
   try {
     const [scheme, token] = req.headers.authorization.split(' ');
-    const user = jwt.verify(token, process.env.JWT_KEY);
+    let user;
+    try {
+      user = jwt.verify(token, process.env.JWT_KEY);
+    } catch {
+      user = null;
+    }
 
     const post_id = req.params.id;
 
@@ -14,10 +19,17 @@ router.get('/:id', async (req, res) => {
       WHERE l.post_id = "${post_id}"
       AND l.user_id in (SELECT id FROM users u WHERE l.user_id = u.id AND u.date_deleted is NULL)`
     );
-    const [userLike] = await req.db.query(`
-      SELECT COUNT(user_id) AS userLike FROM post_likes
-      WHERE post_id = "${post_id}" AND user_id = ${user.userId}`
-    );
+    
+    let userLike;
+    if (user === null) {
+      userLike = 0;
+    } else {
+      const [results] = await req.db.query(`
+        SELECT COUNT(user_id) AS userLike FROM post_likes
+        WHERE post_id = "${post_id}" AND user_id = ${user.userId}`
+      );
+      userLike = results[0].userLike;
+    }
 
     res.status(200).json({ likes, userLike });
   } catch (err) {
