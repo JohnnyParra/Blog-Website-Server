@@ -5,7 +5,12 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const [scheme, token] = req.headers.authorization.split(' ');
-    const user = jwt.verify(token, process.env.JWT_KEY);
+    let user;
+    try {
+      user = jwt.verify(token, process.env.JWT_KEY);
+    } catch (err) {
+      return res.status(200).json({});
+    }
 
     const [userInfo] = await req.db.query(`
     SELECT id, name, email, date_created, color, avatar, avatar_metadata FROM users
