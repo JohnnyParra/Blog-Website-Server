@@ -36,7 +36,10 @@ const pool = mysql.createPool({
 });
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://johnnymparra-blog.netlify.app');
+  next();
+});
 
 app.use(compression({filter: shouldCompress}));
 
