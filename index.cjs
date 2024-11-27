@@ -36,6 +36,7 @@ const pool = mysql.createPool({
 });
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(compression({filter: shouldCompress}));
 
